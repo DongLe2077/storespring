@@ -1070,7 +1070,7 @@ button {
     cursor: grabbing;
 }
 
-/* Hologram Base Ring under the 3D Keyboard */
+/* Hologram Base Ring under the 3D Showcase */
 .hero-hologram-ring {
     position: absolute;
     bottom: 2%;
@@ -1112,6 +1112,49 @@ button {
 }
 
 /* Three.js 3D WebGL Canvas */
+.hero-headset-showcase .hero-aura-glow {
+    width: 290px;
+    height: 340px;
+    background: radial-gradient(ellipse, rgba(73, 154, 174, 0.17), rgba(30, 53, 76, 0.1) 55%, transparent 75%);
+    filter: blur(32px);
+    animation: none;
+}
+
+.hero-headset-showcase .hero-hologram-ring {
+    width: 260px;
+    height: 64px;
+    margin-left: -130px;
+    bottom: 3%;
+    border: 1px solid rgba(106, 217, 227, 0.17);
+    background: radial-gradient(ellipse, rgba(25, 90, 101, 0.13), transparent 70%);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.32);
+    transform: none;
+    animation: none;
+}
+
+.hero-headset-showcase:hover .hero-hologram-ring {
+    border-color: rgba(106, 217, 227, 0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.32);
+    transform: none;
+}
+
+.hero-headset-showcase:hover .hero-aura-glow {
+    transform: none;
+    filter: blur(32px);
+}
+
+.hero-headset-showcase .hero-product-frame {
+    animation: none;
+    cursor: default;
+}
+
+.hero-headset-showcase .hero-product-frame img.hero-3d-img,
+.hero-headset-showcase:hover .hero-product-frame img.hero-3d-img {
+    border-radius: 0;
+    transform: none;
+    filter: drop-shadow(0 20px 32px rgba(0, 0, 0, 0.5));
+}
+
 .keyboard-3d-canvas {
     width: 100%;
     height: 100%;

@@ -493,7 +493,8 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ========================================================
-    // 6. REAL INTERACTIVE 3D MECHANICAL KEYBOARD (THREE.JS)
+    // 6. DARK PREMIUM HEADSET SHOWCASE (THREE.JS)
+    // Keep the existing initializer name and DOM hooks for compatibility.
     // ========================================================
     function init3DKeyboard() {
         var canvas = document.getElementById('keyboard-3d-canvas');
@@ -513,8 +514,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
             var scene = new THREE.Scene();
             var camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 1000);
-            camera.position.set(0, 4.4, 7.8);
-            camera.lookAt(0, 0, 0);
+            camera.position.set(0, 0.4, 6.8);
+            camera.lookAt(0, 0.1, 0);
 
             var renderer = new THREE.WebGLRenderer({
                 canvas: canvas,
@@ -525,124 +526,151 @@ document.addEventListener('DOMContentLoaded', function () {
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
             // Lighting
-            var ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+            var ambientLight = new THREE.AmbientLight(0xb9c9da, 0.65);
             scene.add(ambientLight);
 
             // Left Neon Cyan Point Light
-            var cyanLight = new THREE.PointLight(0x00d4ff, 2.8, 20);
+            var cyanLight = new THREE.PointLight(0x65dce8, 0.9, 20);
             cyanLight.position.set(-4, 3, 3);
             scene.add(cyanLight);
 
             // Right Neon Purple Point Light
-            var purpleLight = new THREE.PointLight(0xa855f7, 2.8, 20);
+            var purpleLight = new THREE.PointLight(0xb5c6e2, 0.75, 20);
             purpleLight.position.set(4, 3, 3);
             scene.add(purpleLight);
 
             // Top directional light
-            var topLight = new THREE.DirectionalLight(0xffffff, 0.9);
+            var topLight = new THREE.DirectionalLight(0xffffff, 1.1);
             topLight.position.set(0, 6, 4);
             scene.add(topLight);
 
-            // Keyboard Group
+            // The existing group and animation hooks now display a headset.
             var keyboard = new THREE.Group();
             scene.add(keyboard);
 
-            // Case (Chassis)
-            var caseGeo = new THREE.BoxGeometry(5.8, 0.42, 2.4);
+            // Graphite headband, leather padding and brushed metal rails.
+            var caseGeo = new THREE.TorusGeometry(1.25, 0.105, 18, 96, Math.PI);
             var caseMat = new THREE.MeshStandardMaterial({
-                color: 0x0f172a,
-                roughness: 0.35,
-                metalness: 0.8
+                color: 0x26313e,
+                roughness: 0.48,
+                metalness: 0.45
             });
             var caseMesh = new THREE.Mesh(caseGeo, caseMat);
-            caseMesh.position.y = -0.21;
+            caseMesh.position.y = 0.22;
             keyboard.add(caseMesh);
 
-            // Bevel rim / chamfer
-            var rimGeo = new THREE.BoxGeometry(5.95, 0.1, 2.55);
+            var rimGeo = new THREE.TorusGeometry(1.29, 0.022, 12, 96, Math.PI);
             var rimMat = new THREE.MeshStandardMaterial({
-                color: 0x00d4ff,
-                roughness: 0.2,
-                metalness: 0.9,
-                emissive: 0x003344,
-                emissiveIntensity: 0.6
+                color: 0x9bacbd,
+                roughness: 0.28,
+                metalness: 0.85
             });
             var rimMesh = new THREE.Mesh(rimGeo, rimMat);
-            rimMesh.position.y = -0.38;
+            rimMesh.position.set(0, 0.22, 0.085);
             keyboard.add(rimMesh);
 
-            // Keycaps Grid (60% Layout, 5 rows)
-            var keycaps = [];
-            var rows = [
-                { count: 14, w: 0.32, gap: 0.07, z: -0.8 },
-                { count: 14, w: 0.32, gap: 0.07, z: -0.4 },
-                { count: 13, w: 0.34, gap: 0.08, z: 0.0 },
-                { count: 12, w: 0.37, gap: 0.08, z: 0.4 },
-                { count: 7,  w: 0.55, gap: 0.12, z: 0.8 } // Spacebar row
-            ];
+            var padding = new THREE.Mesh(
+                new THREE.TorusGeometry(1.13, 0.09, 18, 96, Math.PI),
+                new THREE.MeshStandardMaterial({ color: 0x101820, roughness: 0.95, metalness: 0.02 })
+            );
+            padding.position.set(0, 0.22, 0);
+            keyboard.add(padding);
 
+            // Retain the existing hover collection for the headset controls.
+            var keycaps = [];
             var keyMatDark = new THREE.MeshStandardMaterial({
-                color: 0x1e293b,
-                roughness: 0.4,
-                metalness: 0.25
+                color: 0x253443,
+                roughness: 0.43,
+                metalness: 0.4
             });
             var keyMatCyan = new THREE.MeshStandardMaterial({
-                color: 0x00d4ff,
-                roughness: 0.2,
-                metalness: 0.35,
-                emissive: 0x00d4ff,
-                emissiveIntensity: 0.4
+                color: 0x6ad9e3,
+                roughness: 0.32,
+                metalness: 0.5,
+                emissive: 0x195a65,
+                emissiveIntensity: 0.3
             });
             var keyMatPurple = new THREE.MeshStandardMaterial({
-                color: 0xa855f7,
-                roughness: 0.2,
-                metalness: 0.35,
-                emissive: 0xa855f7,
-                emissiveIntensity: 0.4
+                color: 0x101820,
+                roughness: 0.93,
+                metalness: 0.02
             });
 
-            rows.forEach(function (row, rIdx) {
-                var totalW = row.count * (row.w + row.gap);
-                var startX = -totalW / 2 + row.w / 2;
+            [-1, 1].forEach(function (side) {
+                var cup = new THREE.Group();
+                cup.position.set(side * 1.13, -0.55, 0);
+                cup.rotation.y = side * -0.23;
+                cup.rotation.z = side * 0.09;
+                keyboard.add(cup);
 
-                for (var i = 0; i < row.count; i++) {
-                    var curGeo = (rIdx === 4 && i === 3)
-                        ? new THREE.BoxGeometry(1.8, 0.22, 0.3)
-                        : new THREE.BoxGeometry(row.w, 0.22, 0.3);
+                var cushion = new THREE.Mesh(new THREE.SphereGeometry(1, 40, 32), keyMatPurple);
+                cushion.scale.set(0.53, 0.73, 0.3);
+                cushion.position.z = -0.11;
+                cup.add(cushion);
 
-                    var mat = keyMatDark;
-                    if (rIdx === 0 && (i === 0 || i === 13)) mat = keyMatPurple;
-                    else if (rIdx === 2 && (i === 1 || i === 2 || i === 3)) mat = keyMatCyan;
-                    else if (rIdx === 1 && i === 2) mat = keyMatCyan;
-                    else if (rIdx === 4 && i === 3) mat = keyMatCyan;
-                    else if (Math.random() > 0.75) mat = keyMatPurple;
+                var shell = new THREE.Mesh(new THREE.SphereGeometry(1, 40, 32), keyMatDark);
+                shell.scale.set(0.5, 0.69, 0.25);
+                shell.position.z = 0.09;
+                cup.add(shell);
 
-                    var keyMesh = new THREE.Mesh(curGeo, mat);
-                    keyMesh.position.set(startX + i * (row.w + row.gap), 0.11, row.z);
-                    keyMesh.userData = { originalY: 0.11 };
-                    keyboard.add(keyMesh);
-                    keycaps.push(keyMesh);
-                }
+                var trim = new THREE.Mesh(new THREE.TorusGeometry(0.49, 0.014, 10, 80), keyMatCyan);
+                trim.scale.y = 1.34;
+                trim.position.z = 0.24;
+                cup.add(trim);
+
+                var panel = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 24), caseMat);
+                panel.scale.set(0.4, 0.55, 0.08);
+                panel.position.z = 0.3;
+                cup.add(panel);
+
+                var yoke = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.44, 16), rimMat);
+                yoke.position.set(side * 0.12, 0.62, 0);
+                cup.add(yoke);
+
+                // Small cyan emblem, rather than oversized luminous surfaces.
+                var emblem = new THREE.Mesh(new THREE.TorusGeometry(0.105, 0.012, 8, 36), keyMatCyan);
+                emblem.position.set(0, 0.02, 0.39);
+                cup.add(emblem);
+
+                var keyMesh = new THREE.Mesh(new THREE.SphereGeometry(0.045, 16, 12), keyMatCyan);
+                keyMesh.position.set(side * 1.13, -0.96, 0.37);
+                keyMesh.userData = { originalY: -0.96 };
+                keyboard.add(keyMesh);
+                keycaps.push(keyMesh);
             });
+
+            // Slim boom microphone, using the same scene and renderer.
+            var micCurve = new THREE.CatmullRomCurve3([
+                new THREE.Vector3(-1.4, -0.91, 0.12),
+                new THREE.Vector3(-1.48, -1.18, 0.43),
+                new THREE.Vector3(-1.04, -1.45, 0.72),
+                new THREE.Vector3(-0.62, -1.43, 0.8)
+            ]);
+            keyboard.add(new THREE.Mesh(new THREE.TubeGeometry(micCurve, 32, 0.035, 10, false), caseMat));
+            var micTip = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), keyMatPurple);
+            micTip.scale.set(0.16, 0.085, 0.085);
+            micTip.position.set(-0.62, -1.43, 0.8);
+            keyboard.add(micTip);
 
             // Rotary Volume Knob
-            var knobGeo = new THREE.CylinderGeometry(0.18, 0.18, 0.24, 24);
+            var knobGeo = new THREE.CylinderGeometry(0.065, 0.065, 0.045, 24);
             var knobMat = new THREE.MeshStandardMaterial({
-                color: 0x00d4ff,
-                metalness: 0.9,
-                roughness: 0.15
+                color: 0xa4b2bf,
+                metalness: 0.85,
+                roughness: 0.3
             });
             var knob = new THREE.Mesh(knobGeo, knobMat);
-            knob.position.set(2.4, 0.16, -0.85);
+            knob.position.set(1.48, -0.91, 0.05);
+            knob.rotation.z = Math.PI / 2;
             keyboard.add(knob);
 
             // Initial sport angle
-            keyboard.rotation.x = 0.55;
-            keyboard.rotation.y = -0.45;
-            keyboard.rotation.z = 0.15;
+            keyboard.rotation.x = 0.12;
+            keyboard.rotation.y = -0.3;
+            keyboard.rotation.z = -0.07;
 
-            var targetRotX = 0.55;
-            var targetRotY = -0.45;
+            var targetRotX = 0.12;
+            var targetRotY = -0.3;
 
             var raycaster = new THREE.Raycaster();
             var mousePos = new THREE.Vector2();
@@ -652,8 +680,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 var nx = (e.clientX - rect.left) / rect.width * 2 - 1;
                 var ny = -((e.clientY - rect.top) / rect.height * 2 - 1);
 
-                targetRotY = -0.45 + nx * 0.75;
-                targetRotX = 0.55 - ny * 0.55;
+                targetRotY = -0.3 + nx * 0.4;
+                targetRotX = 0.12 - ny * 0.25;
 
                 mousePos.x = nx;
                 mousePos.y = ny;
@@ -669,8 +697,8 @@ document.addEventListener('DOMContentLoaded', function () {
             });
 
             container.addEventListener('mouseleave', function () {
-                targetRotX = 0.55;
-                targetRotY = -0.45;
+                targetRotX = 0.12;
+                targetRotY = -0.3;
                 keycaps.forEach(function (k) {
                     k.position.y = k.userData.originalY;
                 });
@@ -688,8 +716,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 knob.rotation.y = elapsedTime * 0.5;
 
-                cyanLight.intensity = 2.4 + Math.sin(elapsedTime * 3) * 0.5;
-                purpleLight.intensity = 2.4 + Math.cos(elapsedTime * 2.5) * 0.5;
+                cyanLight.intensity = 0.85 + Math.sin(elapsedTime * 3) * 0.08;
+                purpleLight.intensity = 0.65 + Math.cos(elapsedTime * 2.5) * 0.06;
 
                 renderer.render(scene, camera);
             }
