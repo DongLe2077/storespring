@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="vi">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Thanh toán đơn hàng - Aura</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+    <style>
+        .payment-panel { max-width: 760px; margin: 24px auto; padding: 24px; text-align: left; }
+        .qr-layout { display: flex; gap: 28px; align-items: center; flex-wrap: wrap; }
+        .qr-image { width: 280px; max-width: 100%; height: auto; border-radius: 12px; background: white; }
+        .bank-details { flex: 1; min-width: 220px; overflow-wrap: anywhere; }
+        .bank-details dt { color: var(--text-muted); font-size: .9rem; margin-top: 16px; }
+        .bank-details dd { margin: 4px 0; font-weight: 600; }
+        .payment-notice { padding: 16px; border-radius: 10px; background: rgba(14,165,233,.12); margin: 16px 0; }
+        .payment-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px; }
+        .copy-button { margin-left: 8px; padding: 4px 8px; cursor: pointer; border-radius: 6px; }
+        #paid-card { color: #4ade80; }
+    </style>
+</head>
+<body>
+<div th:replace="~{layout/header :: header}"></div>
+<main class="container order-success">
+    <h1>Đơn hàng đã được tạo</h1>
+    <p>Cảm ơn bạn đã mua sắm tại Aura.</p>
+    <div class="order-code" th:text="${order.code}"></div>
+    <section class="glass-card payment-panel">
+        <p>Tổng thanh toán: <strong th:text="${#numbers.formatInteger(order.totalPrice, 0, 'POINT')} + ' ₫'"></strong></p>
+        <p>Phương thức: <strong th:text="${order.paymentMethod == 'COD' ? 'Tiền mặt khi nhận hàng (COD)' : 'Chuyển khoản ngân hàng / VietQR (PayOS)'}"></strong></p>
+
+        <div id="paid-card" class="payment-notice" role="status"
+             th:style="${order.paymentStatus.name() == 'PAID'} ? '' : 'display:none'">
+            <strong>✓ Đã thanh toán thành công</strong>
+            <p>PayOS đã xác nhận thanh toán cho đơn hàng này.</p>
+            <p th:if="${order.paidAt != null}" th:text="'Thời gian ghi nhận: ' + ${#temporals.format(order.paidAt, 'dd/MM/yyyy HH:mm')}"></p>
+            <p th:if="${order.transactionReference != null}" th:text="'Mã giao dịch: ' + ${order.transactionReference}"></p>
+        </div>
+
+        <div class="payment-notice" th:if="${order.status.name() == 'CANCELLED'}">
+            Đơn hàng đã hủy. Vui lòng không chuyển tiền. Nếu đã chuyển tiền, hãy liên hệ cửa hàng để đối soát.
+        </div>
+
+        <div id="unpaid-section" th:if="${order.paymentStatus.name() != 'PAID' and order.status.name() != 'CANCELLED'}">
+            <div class="payment-notice" th:if="${order.paymentMethod == 'COD'}">
+                Bạn sẽ thanh toán cho nhân viên giao hàng khi nhận hàng.
+            </div>
+            <div th:if="${order.paymentMethod == 'BANK_TRANSFER' or order.paymentMethod == 'VNPAY'}">
+                <p th:if="${paymentError != null}" class="payment-notice" role="alert" th:text="${paymentError}"></p>
+                <div th:if="${order.payosCheckoutUrl == null}" class="payment-notice">
+                    <p>Chưa tạo được thanh toán. Hãy tạo mã QR trước khi chuyển tiền.</p>
+                    <form method="post" th:action="@{/order/{code}/payment/retry(code=${order.code})}">
+                        <input type="hidden" name="token" th:value="${paymentCsrf}"/>
+                        <button class="btn btn-primary" type="submit">Tạo lại mã QR thanh toán</button>
+                    </form>
+                </div>
+                <div th:if="${order.payosCheckoutUrl != null}">
+                    <h2>Quét QR để thanh toán</h2>
+                    <p>Mở ứng dụng ngân hàng, quét mã bên dưới và kiểm tra người nhận, số tiền trước khi xác nhận.</p>
+                    <div class="qr-layout">
+                        <img class="qr-image" th:src="@{/api/payment/qr/{code}(code=${order.code})}" alt="Mã VietQR riêng cho đơn hàng" width="320" height="320"/>
+                        <dl class="bank-details">
+                            <dt>Ngân hàng (mã BIN)</dt><dd th:text="${order.bankBin}"></dd>
+                            <dt>Chủ tài khoản</dt><dd th:text="${order.bankAccountName}"></dd>
+                            <dt>Số tài khoản</dt>
+                            <dd><span id="bank-account" th:text="${order.bankAccountNumber}"></span><button type="button" class="copy-button" onclick="copyValue('bank-account')">Sao chép</button></dd>
+                            <dt>Số tiền</dt><dd th:text="${#numbers.formatInteger(order.totalPrice, 0, 'POINT')} + ' ₫'"></dd>
+                            <dt>Nội dung chuyển khoản (giữ nguyên)</dt>
+                            <dd><span id="bank-description" th:text="${order.bankDescription}"></span><button type="button" class="copy-button" onclick="copyValue('bank-description')">Sao chép</button></dd>
+                        </dl>
+                    </div>
+                    <p>Bạn cũng có thể chuyển khoản thủ công theo đúng thông tin trên. Không sửa số tiền hoặc nội dung chuyển khoản.</p>
+                    <div class="payment-actions">
+                        <a class="btn btn-primary" th:href="${order.payosCheckoutUrl}" target="_blank" rel="noopener noreferrer">Mở trang thanh toán PayOS</a>
+                        <button id="check-button" type="button" class="btn btn-secondary" onclick="checkPayment()">Kiểm tra thanh toán</button>
+                    </div>
+                    <p id="payment-status" class="payment-notice" role="status" aria-live="polite">Chờ thanh toán. Hệ thống sẽ tự động cập nhật khi PayOS xác nhận tiền về.</p>
+                </div>
+            </div>
+        </div>
+        <p id="copy-status" role="status" aria-live="polite"></p>
+    </section>
+    <div class="payment-actions" style="justify-content:center">
+        <a class="btn btn-primary" th:href="@{/}">Tiếp tục mua sắm</a>
+        <a class="btn btn-secondary" th:if="${session.currentUser != null}" th:href="@{/my-orders}">Đơn hàng của tôi</a>
+    </div>
+</main>
+<div th:replace="~{layout/footer :: footer}"></div>
+<script th:inline="javascript">
+    const orderCode = /*[[${order.code}]]*/ '';
+    const statusUrl = /*[[@{/api/payment/check-status/{code}(code=${order.code})}]]*/ '';
+    let paid = /*[[${order.paymentStatus.name() == 'PAID'}]]*/ false;
+    let checking = false;
+    let timer;
+    async function copyValue(id) {
+        try {
+            await navigator.clipboard.writeText(document.getElementById(id).textContent);
+            document.getElementById('copy-status').textContent = 'Đã sao chép.';
+        } catch (error) {
+            document.getElementById('copy-status').textContent = 'Hãy chọn và sao chép thông tin bằng tay.';
+        }
+    }
+    async function checkPayment() {
+        if (paid || checking || !document.getElementById('payment-status')) return;
+        checking = true;
+        const button = document.getElementById('check-button');
+        button.disabled = true;
+        try {
+            const response = await fetch(statusUrl, {cache: 'no-store', signal: AbortSignal.timeout(12000)});
+            if (!response.ok) throw new Error('Không thể kiểm tra');
+            const data = await response.json();
+            if (data.isPaid) {
+                paid = true;
+                clearTimeout(timer);
+                document.getElementById('unpaid-section').style.display = 'none';
+                document.getElementById('paid-card').style.display = 'block';
+            } else if (data.orderStatus === 'CANCELLED') {
+                window.location.reload();
+            } else if (data.verificationUnavailable) {
+                document.getElementById('payment-status').textContent = 'Chưa kết nối được PayOS. Nếu đã chuyển tiền, vui lòng chờ xác nhận và không chuyển lại.';
+            }
+        } catch (error) {
+            document.getElementById('payment-status').textContent = 'Chưa kiểm tra được thanh toán. Hãy kiểm tra kết nối rồi thử lại; không chuyển tiền lần nữa nếu đã thanh toán.';
+        } finally {
+            checking = false;
+            button.disabled = false;
+        }
+    }
+    async function poll() {
+        if (!document.hidden) await checkPayment();
+        if (!paid && document.getElementById('payment-status')) timer = setTimeout(poll, 5000);
+    }
+    poll();
+    window.addEventListener('pagehide', () => clearTimeout(timer));
+</script>
+</body>
+</html>

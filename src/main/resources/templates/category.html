@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title th:text="${category.name} + ' - Aura'">Danh mục - Aura</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+<div th:replace="~{layout/header :: header}"></div>
+
+<div class="container">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1 th:text="${category.name}">Tên danh mục</h1>
+        <p>Khám phá bộ sưu tập <span th:text="${category.name}"></span> chính hãng, giá tốt nhất</p>
+    </div>
+
+    <!-- Results Bar -->
+    <div class="results-bar" th:if="${products.totalElements > 0}">
+        <span class="results-count">Hiển thị <strong th:text="${products.numberOfElements}">12</strong> / <strong th:text="${products.totalElements}">50</strong> sản phẩm</span>
+        <form th:action="@{/category/{id}(id=${category.id})}" method="get" style="display:flex; gap:8px; align-items:center;">
+            <select name="sortBy" class="sort-select" onchange="this.form.submit()">
+                <option value="newest" th:selected="${sortBy == 'newest'}">Mới nhất</option>
+                <option value="price_asc" th:selected="${sortBy == 'price_asc'}">Giá tăng dần</option>
+                <option value="price_desc" th:selected="${sortBy == 'price_desc'}">Giá giảm dần</option>
+            </select>
+        </form>
+    </div>
+
+    <!-- Product Grid -->
+    <div class="product-grid" th:if="${products.totalElements > 0}">
+        <div th:each="product : ${products.content}" class="product-card animate-fade-in">
+            <a th:href="@{/product/{id}(id=${product.id})}">
+                <div class="product-card-img">
+                    <img th:src="${product.thumbnail}" th:alt="${product.title}" onerror="this.style.display='none'"/>
+                    <div class="product-card-badges">
+                        <span class="badge-sale" th:text="'-' + ${product.discount} + '%'" th:if="${product.discount != null and product.discount > 0}"></span>
+                    </div>
+                </div>
+            </a>
+            <div class="product-card-quick">
+                <button class="btn-add-cart" th:data-product-id="${product.id}">🛒 Thêm giỏ</button>
+            </div>
+            <div class="product-card-body">
+                <span class="product-card-category" th:text="${product.category != null ? product.category.name : ''}"></span>
+                <a th:href="@{/product/{id}(id=${product.id})}">
+                    <h3 class="product-card-title" th:text="${product.title}">Tên sản phẩm</h3>
+                </a>
+                <div class="product-card-price">
+                    <span class="price-current" th:text="${#numbers.formatInteger(product.discountedPrice, 0, 'POINT')} + ' ₫'"></span>
+                    <span class="price-original" th:if="${product.discount != null and product.discount > 0}" th:text="${#numbers.formatInteger(product.price, 0, 'POINT')} + ' ₫'"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Empty State -->
+    <div class="cart-empty" th:if="${products.totalElements == 0}">
+        <div class="empty-icon">📦</div>
+        <h2>Chưa có sản phẩm nào</h2>
+        <p>Danh mục này hiện chưa có sản phẩm. Vui lòng quay lại sau!</p>
+        <a th:href="@{/}" class="btn btn-primary">← Về trang chủ</a>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" th:if="${products.totalPages > 1}">
+        <a th:if="${products.number > 0}" th:href="@{/category/{id}(id=${category.id}, page=${products.number - 1}, sortBy=${sortBy})}">« Trước</a>
+        <span class="disabled" th:if="${products.number == 0}">« Trước</span>
+
+        <th:block th:each="i : ${#numbers.sequence(0, products.totalPages - 1)}">
+            <a th:if="${i != products.number}" th:href="@{/category/{id}(id=${category.id}, page=${i}, sortBy=${sortBy})}" th:text="${i + 1}">1</a>
+            <span th:if="${i == products.number}" class="active" th:text="${i + 1}">1</span>
+        </th:block>
+
+        <a th:if="${products.number < products.totalPages - 1}" th:href="@{/category/{id}(id=${category.id}, page=${products.number + 1}, sortBy=${sortBy})}">Sau »</a>
+        <span class="disabled" th:if="${products.number >= products.totalPages - 1}">Sau »</span>
+    </div>
+</div>
+
+<div th:replace="~{layout/footer :: footer}"></div>
+<script th:src="@{/js/main.js}"></script>
+</body>
+</html>

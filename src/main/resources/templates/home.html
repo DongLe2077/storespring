@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Aura - Thiết bị điện tử & Gaming chính hãng</title>
+    <meta name="description" content="Mua sắm bàn phím cơ, chuột gaming, tai nghe và phụ kiện điện tử cao cấp với giá tốt nhất."/>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+
+<!-- Header -->
+<div th:replace="~{layout/header :: header}"></div>
+
+<!-- Hero Banner -->
+<section class="hero" id="hero-section">
+    <canvas id="hero-canvas" class="hero-canvas"></canvas>
+    <div class="container hero-content">
+        <div class="hero-grid">
+            <!-- Left: Hero Text & CTA -->
+            <div class="hero-text">
+                <span class="hero-tag">
+                    <span class="tag-dot"></span>
+                    ⚡ Flagship Gaming Gear · Bảo hành 24T chính hãng
+                </span>
+                <h1 class="hero-title">
+                    Thiết Bị Điện Tử <br/>
+                    <span class="glitch-text" data-text="Đẳng Cấp Gaming">Đẳng Cấp Gaming</span>
+                </h1>
+                
+                <div class="hero-typed-wrapper">
+                    <span class="hero-typed-prefix">Chuyên cung cấp: </span>
+                    <span id="hero-typed-text" class="hero-typed-text">Bàn Phím Cơ Custom</span>
+                    <span class="typed-cursor">|</span>
+                </div>
+
+                <p class="hero-desc">Trải nghiệm không gian setup chuẩn thi đấu Esports. Từng phím gõ đầm tay, từng cú vẩy chuột chuẩn xác từng pixel — Nâng tầm trải nghiệm cùng Aura.</p>
+                
+                <div class="hero-actions">
+                    <a th:href="@{/search}" class="btn btn-primary btn-lg btn-shimmer">
+                        <span>Khám phá ngay</span>
+                        <span class="btn-arrow">→</span>
+                    </a>
+                    <a th:href="@{/search(sortBy='newest')}" class="btn btn-secondary btn-lg">Hàng mới về ✦</a>
+                </div>
+
+                <div class="hero-stats">
+                    <div class="hero-stat-item">
+                        <span class="stat-number">500<span class="stat-plus">+</span></span>
+                        <span class="stat-label">Sản phẩm tuyển chọn</span>
+                    </div>
+                    <div class="hero-stat-item">
+                        <span class="stat-number">24<span class="stat-plus">T</span></span>
+                        <span class="stat-label">Bảo hành 1 đổi 1</span>
+                    </div>
+                    <div class="hero-stat-item">
+                        <span class="stat-number">10k<span class="stat-plus">+</span></span>
+                        <span class="stat-label">Game thủ tin dùng</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: 3D Floating Interactive Showcase -->
+            <div class="hero-visual">
+                <div class="hero-floating-card" id="hero-floating-card">
+                    <div class="hero-aura-glow"></div>
+                    <div class="hero-hologram-ring"></div>
+                    <div class="hero-product-frame" id="hero-product-frame">
+                        <canvas id="keyboard-3d-canvas" class="keyboard-3d-canvas" style="display: none;"></canvas>
+                        <img th:src="@{/images/hero-keyboard-3d.jpg}" alt="Aura Hyperion Flagship 3D Mechanical Keyboard" class="hero-3d-img" id="hero-fallback-img" onerror="this.src='/uploads/hero-keyboard-3d.jpg'"/>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features / Trust Strip -->
+<section class="features-strip">
+    <div class="container">
+        <div class="features-grid">
+            <div class="feature-item">
+                <div class="feature-icon-box">🚀</div>
+                <div class="feature-text">
+                    <h4>Giao hàng hỏa tốc</h4>
+                    <p>Miễn phí đơn từ 500k toàn quốc</p>
+                </div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon-box">🛡️</div>
+                <div class="feature-text">
+                    <h4>100% Chính hãng</h4>
+                    <p>Bảo hành điện tử chuẩn 24 tháng</p>
+                </div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon-box">🔄</div>
+                <div class="feature-text">
+                    <h4>Đổi mới 30 ngày</h4>
+                    <p>1 đổi 1 ngay nếu lỗi nhà sản xuất</p>
+                </div>
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon-box">🎧</div>
+                <div class="feature-text">
+                    <h4>Tư vấn Gear 24/7</h4>
+                    <p>Đội ngũ am hiểu phím cơ & gear</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- Hot Sale Products -->
+<section class="section" th:if="${hotSaleProducts != null and !hotSaleProducts.isEmpty()}">
+    <div class="container">
+        <div class="section-header">
+            <h2>🔥 Giảm giá <span class="accent">sốc</span></h2>
+            <a th:href="@{/search}" class="view-all">Xem tất cả →</a>
+        </div>
+        <div class="product-grid">
+            <div th:each="product : ${hotSaleProducts}" class="product-card animate-fade-in">
+                <a th:href="@{/product/{id}(id=${product.id})}">
+                    <div class="product-card-img">
+                        <img th:src="${product.thumbnail != null ? product.thumbnail : '/css/style.css'}" th:alt="${product.title}" onerror="this.style.display='none'"/>
+                        <div class="product-card-badges">
+                            <span class="badge-sale" th:text="'-' + ${product.discount} + '%'" th:if="${product.discount != null and product.discount > 0}">-25%</span>
+                        </div>
+                    </div>
+                </a>
+                <div class="product-card-quick">
+                    <button class="btn-add-cart" th:data-product-id="${product.id}">🛒 Thêm giỏ</button>
+                </div>
+                <div class="product-card-body">
+                    <span class="product-card-category" th:text="${product.category != null ? product.category.name : ''}">Category</span>
+                    <a th:href="@{/product/{id}(id=${product.id})}">
+                        <h3 class="product-card-title" th:text="${product.title}">Tên sản phẩm</h3>
+                    </a>
+                    <div class="product-card-price">
+                        <span class="price-current" th:text="${#numbers.formatInteger(product.discountedPrice, 0, 'POINT')} + ' ₫'">1.290.000 ₫</span>
+                        <span class="price-original" th:if="${product.discount != null and product.discount > 0}" th:text="${#numbers.formatInteger(product.price, 0, 'POINT')} + ' ₫'">1.690.000 ₫</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Latest Products -->
+<section class="section" th:if="${latestProducts != null and !latestProducts.isEmpty()}">
+    <div class="container">
+        <div class="section-header">
+            <h2>🆕 Sản phẩm <span class="accent">mới nhất</span></h2>
+            <a th:href="@{/search(sortBy='newest')}" class="view-all">Xem tất cả →</a>
+        </div>
+        <div class="product-grid">
+            <div th:each="product : ${latestProducts}" class="product-card animate-fade-in">
+                <a th:href="@{/product/{id}(id=${product.id})}">
+                    <div class="product-card-img">
+                        <img th:src="${product.thumbnail != null ? product.thumbnail : '/css/style.css'}" th:alt="${product.title}" onerror="this.style.display='none'"/>
+                        <div class="product-card-badges">
+                            <span class="badge-sale" th:text="'-' + ${product.discount} + '%'" th:if="${product.discount != null and product.discount > 0}">-25%</span>
+                            <span class="badge-new">MỚI</span>
+                        </div>
+                    </div>
+                </a>
+                <div class="product-card-quick">
+                    <button class="btn-add-cart" th:data-product-id="${product.id}">🛒 Thêm giỏ</button>
+                </div>
+                <div class="product-card-body">
+                    <span class="product-card-category" th:text="${product.category != null ? product.category.name : ''}">Category</span>
+                    <a th:href="@{/product/{id}(id=${product.id})}">
+                        <h3 class="product-card-title" th:text="${product.title}">Tên sản phẩm</h3>
+                    </a>
+                    <div class="product-card-price">
+                        <span class="price-current" th:text="${#numbers.formatInteger(product.discountedPrice, 0, 'POINT')} + ' ₫'">1.290.000 ₫</span>
+                        <span class="price-original" th:if="${product.discount != null and product.discount > 0}" th:text="${#numbers.formatInteger(product.price, 0, 'POINT')} + ' ₫'">1.690.000 ₫</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<div th:replace="~{layout/footer :: footer}"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script th:src="@{/js/main.js}"></script>
+</body>
+</html>

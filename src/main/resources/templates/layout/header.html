@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<!-- Glassmorphism Sticky Header Fragment -->
+<header th:fragment="header" class="header">
+    <div class="container header-inner">
+
+        <!-- Logo -->
+        <a href="/" class="logo">
+            <img th:src="@{/images/logo.svg}" alt="Aura" style="width: 36px; height: 36px;"/>
+            <span>Au<span style="color: var(--neon-cyan);">ra</span></span>
+        </a>
+
+        <!-- Navigation Links -->
+        <nav class="nav-links">
+            <a th:href="@{/}" th:classappend="${currentPage == 'home'} ? 'active'">Trang chủ</a>
+            <a th:href="@{/search}" th:classappend="${currentPage == 'search'} ? 'active'">Sản phẩm</a>
+
+            <!-- Dropdown Danh mục -->
+            <div class="nav-dropdown">
+                <a th:href="@{/categories}" class="dropdown-toggle" th:classappend="${currentPage == 'categories' or currentPage == 'category'} ? 'active'">
+                    Danh mục <span style="font-size: 0.72rem; margin-left: 2px;">▾</span>
+                </a>
+                <div class="dropdown-menu">
+                    <a th:each="cat : ${headerCategories}" th:href="@{/category/{id}(id=${cat.id})}" class="dropdown-item">
+                        <span th:if="${#strings.contains(cat.name, 'phím')}">⌨️</span>
+                        <span th:if="${#strings.contains(cat.name, 'Chuột')}">🖱️</span>
+                        <span th:if="${#strings.contains(cat.name, 'Tai nghe')}">🎧</span>
+                        <span th:if="${#strings.contains(cat.name, 'kiện') or #strings.contains(cat.name, 'Lót')}">🎒</span>
+                        <span th:text="${cat.name}">Tên danh mục</span>
+                    </a>
+                    <div style="border-top: 1px solid var(--border-light); margin: 6px 0;"></div>
+                    <a th:href="@{/categories}" class="dropdown-item" style="color: var(--neon-cyan); font-weight: 600;">
+                        📁 Xem tất cả danh mục →
+                    </a>
+                </div>
+            </div>
+
+            <a th:href="@{/contact}" th:classappend="${currentPage == 'contact'} ? 'active'">Liên hệ</a>
+        </nav>
+
+        <!-- Search Bar -->
+        <form class="search-bar" th:action="@{/search}" method="get">
+            <input type="text" name="keyword" placeholder="Tìm bàn phím, chuột, tai nghe..." th:value="${param.keyword != null ? param.keyword : ''}"/>
+            <button type="submit">🔍</button>
+        </form>
+
+        <!-- Header Actions -->
+        <div class="header-actions">
+            <!-- Cart Icon -->
+            <a th:href="@{/cart}" class="cart-icon">
+                🛒
+                <span class="cart-badge" th:text="${session.CART_COUNT != null ? session.CART_COUNT : 0}">0</span>
+            </a>
+
+            <!-- Guest: Gộp Đăng nhập & Đăng ký (Rê chuột vào hiện Đăng ký) -->
+            <div class="user-auth-dropdown" th:if="${session.currentUser == null}">
+                <a th:href="@{/login}" class="btn-auth login user-auth-btn">
+                    👤 Đăng nhập <span style="font-size: 0.7rem; margin-left: 2px;">▾</span>
+                </a>
+                <div class="auth-dropdown-menu">
+                    <a th:href="@{/login}" class="auth-dropdown-login-btn btn btn-primary">Đăng nhập</a>
+                    <div class="auth-dropdown-divider"></div>
+                    <div class="auth-dropdown-register-prompt">
+                        <span style="color: var(--text-secondary); font-size: 0.82rem;">Chưa có tài khoản?</span>
+                        <a th:href="@{/register}" class="auth-register-btn">Đăng ký ngay →</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Logged in User -->
+            <div class="user-auth-dropdown" th:if="${session.currentUser != null}">
+                <a th:href="@{/my-orders}" class="user-menu user-auth-btn">
+                    👤 <span th:text="${session.currentUser.fullname ?: session.currentUser.username}">User</span>
+                    <span style="font-size: 0.7rem; margin-left: 4px;">▾</span>
+                </a>
+                <div class="auth-dropdown-menu" style="min-width: 190px;">
+                    <a th:href="@{/my-orders}" class="dropdown-item">📦 Lịch sử đơn hàng</a>
+                    <a th:if="${session.currentUser.role == 'ADMIN'}" th:href="@{/admin}" class="dropdown-item" style="color: var(--neon-cyan);">🛡️ Trang Quản trị</a>
+                    <div class="auth-dropdown-divider"></div>
+                    <a th:href="@{/logout}" class="dropdown-item" style="color: #f43f5e;">🚪 Đăng xuất</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Toggle -->
+        <div class="menu-toggle" onclick="this.classList.toggle('active')">
+            <span></span><span></span><span></span>
+        </div>
+    </div>
+</header>
+</html>

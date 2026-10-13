@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/layout/admin-layout :: admin-head(${isEdit ? 'Chỉnh sửa sản phẩm #' + product.id : 'Thêm sản phẩm mới'})}"></head>
+<body>
+
+<div th:replace="~{admin/layout/admin-layout :: admin-layout(~{::#product-form-content}, ${isEdit ? 'Chỉnh sửa sản phẩm #' + product.id : 'Thêm sản phẩm mới'})}">
+    <div id="product-form-content">
+
+        <div class="admin-card" style="max-width: 860px; margin: 0 auto;">
+            <div class="admin-card-header">
+                <h2>
+                    <span th:text="${isEdit ? '✏️ Cập nhật sản phẩm #' + product.id : '➕ Thêm sản phẩm mới vào kho'}">Thêm sản phẩm</span>
+                </h2>
+                <a th:href="@{/admin/products}" class="btn btn-secondary btn-sm">← Quay lại danh sách</a>
+            </div>
+
+            <form th:action="${isEdit ? '/admin/products/edit/' + product.id : '/admin/products/create'}" 
+                  method="post" enctype="multipart/form-data">
+
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 8px;">Tên sản phẩm *</label>
+                    <input type="text" name="title" class="form-control" th:value="${product.title}" 
+                           placeholder="Ví dụ: Bàn phím cơ Akko 3098B Plus Multi-modes" required/>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                    <div class="form-group">
+                        <label style="display: block; font-weight: 600; margin-bottom: 8px;">Danh mục sản phẩm *</label>
+                        <select name="categoryId" class="form-control" required>
+                            <option value="">-- Chọn danh mục --</option>
+                            <option th:each="cat : ${categories}" 
+                                    th:value="${cat.id}" 
+                                    th:text="${cat.name}" 
+                                    th:selected="${product.category != null and product.category.id == cat.id}">
+                                Danh mục
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label style="display: block; font-weight: 600; margin-bottom: 8px;">Số lượng tồn kho *</label>
+                        <input type="number" name="quantity" class="form-control" th:value="${product.quantity != null ? product.quantity : 10}" 
+                               min="0" placeholder="0" required/>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                    <div class="form-group">
+                        <label style="display: block; font-weight: 600; margin-bottom: 8px;">Giá gốc (VNĐ) *</label>
+                        <input type="number" name="price" class="form-control" th:value="${product.price}" 
+                               min="1000" step="1000" placeholder="Ví dụ: 1500000" required/>
+                    </div>
+
+                    <div class="form-group">
+                        <label style="display: block; font-weight: 600; margin-bottom: 8px;">Giảm giá (%)</label>
+                        <input type="number" name="discount" class="form-control" th:value="${product.discount != null ? product.discount : 0}" 
+                               min="0" max="99" placeholder="0 - 99"/>
+                    </div>
+                </div>
+
+                <!-- Upload ảnh sản phẩm -->
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 8px;">
+                        Ảnh sản phẩm 
+                        <span th:if="${isEdit}" style="font-weight: normal; color: var(--text-muted);">(Để trống nếu giữ nguyên ảnh hiện tại)</span>
+                    </label>
+                    <input type="file" name="thumbnailFile" class="form-control" accept="image/*" onchange="previewThumbnail(this)"/>
+
+                    <!-- Khung xem trước ảnh -->
+                    <div style="margin-top: 12px; display: flex; align-items: center; gap: 16px;">
+                        <div class="admin-img-preview">
+                            <img id="image-preview" 
+                                 th:src="${product.thumbnail != null ? product.thumbnail : '/images/logo.svg'}" 
+                                 alt="Ảnh xem trước" onerror="this.src='/images/logo.svg'"/>
+                        </div>
+                        <span style="font-size: 0.82rem; color: var(--text-muted);">
+                            Hỗ trợ định dạng: JPG, PNG, WEBP, GIF. Ảnh được lưu tự động vào thư mục <code>uploads/</code>.
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Mô tả chi tiết -->
+                <div class="form-group" style="margin-bottom: 28px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 8px;">Mô tả chi tiết & thông số kỹ thuật</label>
+                    <textarea name="description" class="form-control" rows="6" 
+                              placeholder="Nhập thông số, kết nối, switch, tính năng nổi bật..." 
+                              th:text="${product.description}"></textarea>
+                </div>
+
+                <!-- Nút thao tác -->
+                <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                    <a th:href="@{/admin/products}" class="btn btn-secondary">Hủy bỏ</a>
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <span th:text="${isEdit ? '💾 Lưu thay đổi' : '➕ Tạo sản phẩm mới'}">Lưu sản phẩm</span>
+                    </button>
+                </div>
+
+            </form>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    function previewThumbnail(input) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('image-preview').src = e.target.result;
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+</script>
+</body>
+</html>

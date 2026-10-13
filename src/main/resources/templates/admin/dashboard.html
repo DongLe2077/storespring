@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/layout/admin-layout :: admin-head('Bảng Điều Khiển & Thống Kê')}"></head>
+<body>
+
+<div th:replace="~{admin/layout/admin-layout :: admin-layout(~{::#dashboard-content}, 'Tổng quan Dashboard & Báo cáo Lợi nhuận')}">
+    <div id="dashboard-content">
+
+        <!-- 5 KPI Thống Kê Tổng Quan -->
+        <div class="admin-kpi-grid" style="grid-template-columns: repeat(5, 1fr);">
+            <!-- 1. Doanh thu -->
+            <div class="admin-kpi-card">
+                <div class="kpi-header">
+                    <span class="kpi-title">Doanh thu hệ thống</span>
+                    <div class="kpi-icon kpi-icon-cyan">💰</div>
+                </div>
+                <div class="kpi-value" th:text="${#numbers.formatInteger(totalRevenue, 0, 'POINT')} + ' ₫'">0 ₫</div>
+                <div class="kpi-subtext">
+                    <span class="kpi-badge kpi-badge-green">↑ 12.8%</span>
+                    <span>so với kỳ trước</span>
+                </div>
+            </div>
+
+            <!-- 2. Lợi nhuận gộp -->
+            <div class="admin-kpi-card">
+                <div class="kpi-header">
+                    <span class="kpi-title">Lợi nhuận gộp (35%)</span>
+                    <div class="kpi-icon kpi-icon-green">📈</div>
+                </div>
+                <div class="kpi-value" style="color: var(--admin-success-text);" 
+                     th:text="${#numbers.formatInteger(totalProfit, 0, 'POINT')} + ' ₫'">
+                    0 ₫
+                </div>
+                <div class="kpi-subtext">
+                    <span style="color: var(--admin-success-text); font-weight: 600;">Ước tính biên 35%</span>
+                </div>
+            </div>
+
+            <!-- 3. Tổng đơn hàng -->
+            <div class="admin-kpi-card">
+                <div class="kpi-header">
+                    <span class="kpi-title">Đơn hàng</span>
+                    <div class="kpi-icon kpi-icon-purple">🧾</div>
+                </div>
+                <div class="kpi-value" th:text="${totalOrders}">0</div>
+                <div class="kpi-subtext">
+                    <span style="color: var(--admin-warning-text); font-weight: 600;" th:text="${pendingOrders} + ' chờ'">0 chờ</span> · 
+                    <span style="color: var(--admin-success-text); font-weight: 600;" th:text="${completedOrders} + ' xong'">0 xong</span>
+                </div>
+            </div>
+
+            <!-- 4. Giá trị đơn TB (AOV) -->
+            <div class="admin-kpi-card">
+                <div class="kpi-header">
+                    <span class="kpi-title">Giá trị đơn TB (AOV)</span>
+                    <div class="kpi-icon kpi-icon-amber">🎯</div>
+                </div>
+                <div class="kpi-value" th:text="${#numbers.formatInteger(averageOrderValue, 0, 'POINT')} + ' ₫'">0 ₫</div>
+                <div class="kpi-subtext">
+                    <span th:text="${#numbers.formatDecimal(completionRate, 1, 1)} + '% hoàn thành'">100% hoàn thành</span>
+                </div>
+            </div>
+
+            <!-- 5. Sản phẩm trong kho -->
+            <div class="admin-kpi-card">
+                <div class="kpi-header">
+                    <span class="kpi-title">Sản phẩm & Khách</span>
+                    <div class="kpi-icon kpi-icon-pink">📦</div>
+                </div>
+                <div class="kpi-value" th:text="${totalProducts}">0</div>
+                <div class="kpi-subtext">
+                    <span th:text="${totalUsers} + ' tài khoản khách hàng'">0 user</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- HÀNG BIỂU ĐỒ 1: Doanh thu & Lợi nhuận (Line Area) + Cơ cấu Danh mục (Doughnut) -->
+        <div class="admin-chart-grid">
+            <!-- Biểu đồ Doanh thu & Lợi nhuận -->
+            <div class="admin-card" style="margin-bottom: 0;">
+                <div class="admin-card-header">
+                    <div>
+                        <h2>📊 Xu hướng Doanh thu & Lợi nhuận (7 ngày gần nhất)</h2>
+                        <span style="font-size: 0.8rem; color: var(--admin-text-muted);">So sánh tăng trưởng doanh số và lợi nhuận gộp theo từng ngày</span>
+                    </div>
+                    <div class="chart-legend-box">
+                        <span><span class="chart-legend-dot" style="background: #4f46e5;"></span> Doanh thu</span>
+                        <span><span class="chart-legend-dot" style="background: #10b981;"></span> Lợi nhuận (35%)</span>
+                    </div>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="revenueProfitChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Biểu đồ Cơ cấu doanh thu theo Danh mục -->
+            <div class="admin-card" style="margin-bottom: 0;">
+                <div class="admin-card-header">
+                    <div>
+                        <h2>🍩 Cơ cấu Doanh thu</h2>
+                        <span style="font-size: 0.8rem; color: var(--admin-text-muted);">Tỷ trọng doanh số theo danh mục</span>
+                    </div>
+                </div>
+                <div class="chart-wrapper" style="display: flex; align-items: center; justify-content: center;">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- HÀNG BIỂU ĐỒ 2: Top Sản phẩm Sinh lời (Bar Chart) + Tỷ lệ Trạng thái Đơn hàng (Pie) -->
+        <div class="admin-chart-grid-equal" style="margin-top: 24px;">
+            <!-- Top Sản phẩm sinh lời -->
+            <div class="admin-card" style="margin-bottom: 0;">
+                <div class="admin-card-header">
+                    <div>
+                        <h2>🏆 Top 5 Sản phẩm Đem lại Doanh thu & Lợi nhuận cao nhất</h2>
+                        <span style="font-size: 0.8rem; color: var(--admin-text-muted);">Hiệu suất sinh lời giữa các gaming gear chủ lực</span>
+                    </div>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="topProductsChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Tỷ lệ trạng thái đơn hàng -->
+            <div class="admin-card" style="margin-bottom: 0;">
+                <div class="admin-card-header">
+                    <div>
+                        <h2>🥧 Trạng thái Đơn hàng & Xử lý (Fulfillment)</h2>
+                        <span style="font-size: 0.8rem; color: var(--admin-text-muted);">Phân bố đơn hàng toàn hệ thống</span>
+                    </div>
+                </div>
+                <div class="chart-wrapper" style="display: flex; align-items: center; justify-content: center;">
+                    <canvas id="orderStatusChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- BẢNG 1: BẢNG PHÂN TÍCH HIỆU SUẤT & LỢI NHUẬN SẢN PHẨM -->
+        <div class="admin-card" style="margin-top: 28px;">
+            <div class="admin-card-header">
+                <div>
+                    <h2>💎 Bảng Phân Tích Thông Số & Lợi Nhuận Sản Phẩm</h2>
+                    <span style="font-size: 0.82rem; color: var(--admin-text-muted);">Chi tiết giá bán, giá vốn ước tính (65%), lợi nhuận đơn vị (35%), số lượng đã bán và tổng lợi nhuận thu về</span>
+                </div>
+                <div>
+                    <a th:href="@{/admin/products}" class="btn btn-secondary btn-sm">Quản lý kho sản phẩm →</a>
+                </div>
+            </div>
+
+            <div class="admin-table-responsive">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Sản phẩm</th>
+                            <th>Danh mục</th>
+                            <th>Giá bán</th>
+                            <th>Giá vốn (ƯT)</th>
+                            <th>Lợi nhuận/SP</th>
+                            <th style="text-align: center;">Đã bán</th>
+                            <th>Tổng doanh thu</th>
+                            <th>Tổng lợi nhuận</th>
+                            <th>Trạng thái kho</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:if="${productProfitList.isEmpty()}">
+                            <td colspan="9" style="text-align: center; color: var(--admin-text-muted); padding: 30px;">
+                                Chưa có sản phẩm nào trong hệ thống.
+                            </td>
+                        </tr>
+                        <tr th:each="p : ${productProfitList}">
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <img th:src="${p.thumbnail != null ? p.thumbnail : '/images/logo.svg'}" 
+                                         alt="Ảnh" class="admin-thumb" onerror="this.src='/images/logo.svg'"/>
+                                    <div>
+                                        <strong style="color: var(--admin-text-main); display: block;" th:text="${p.title}">Tên sản phẩm</strong>
+                                        <span style="font-size: 0.75rem; color: var(--admin-text-muted);" th:text="'Mã: #' + ${p.id}">#1</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="role-user" th:text="${p.categoryName}">Bàn phím cơ</span>
+                            </td>
+                            <td>
+                                <strong style="color: var(--admin-text-main);" th:text="${#numbers.formatInteger(p.price, 0, 'POINT')} + ' ₫'">1.000.000 ₫</strong>
+                            </td>
+                            <td style="color: var(--admin-text-muted);" th:text="${#numbers.formatInteger(p.costPrice, 0, 'POINT')} + ' ₫'">650.000 ₫</td>
+                            <td>
+                                <span style="color: var(--admin-success-text); font-weight: 600;" th:text="'+' + ${#numbers.formatInteger(p.profitPerUnit, 0, 'POINT')} + ' ₫'">+350.000 ₫</span>
+                                <span style="font-size: 0.72rem; color: var(--admin-text-light);">(35%)</span>
+                            </td>
+                            <td style="text-align: center;">
+                                <strong th:text="${p.quantitySold}">0</strong>
+                            </td>
+                            <td>
+                                <span th:text="${#numbers.formatInteger(p.totalRevenue, 0, 'POINT')} + ' ₫'">0 ₫</span>
+                            </td>
+                            <td>
+                                <strong style="color: var(--admin-success-text); font-size: 0.95rem;" 
+                                        th:text="${#numbers.formatInteger(p.totalProfit, 0, 'POINT')} + ' ₫'">
+                                    0 ₫
+                                </strong>
+                            </td>
+                            <td>
+                                <span class="admin-status status-completed" th:if="${p.stockStatus == 'IN_STOCK'}">
+                                    Còn <span th:text="${p.stockQuantity}">10</span> SP
+                                </span>
+                                <span class="admin-status status-pending" th:if="${p.stockStatus == 'LOW_STOCK'}">
+                                    Sắp hết (<span th:text="${p.stockQuantity}">2</span>)
+                                </span>
+                                <span class="admin-status status-cancelled" th:if="${p.stockStatus == 'OUT_OF_STOCK'}">
+                                    Hết hàng
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- BẢNG 2: ĐƠN HÀNG MỚI NHẤT CẦN XỬ LÝ -->
+        <div class="admin-card">
+            <div class="admin-card-header">
+                <div>
+                    <h2>⚡ Đơn hàng mới nhất cần xử lý</h2>
+                    <span style="font-size: 0.82rem; color: var(--admin-text-muted);">Các đơn đặt hàng gần đây cần xác nhận và bàn giao vận chuyển</span>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <a th:href="@{/admin/orders}" class="btn btn-secondary btn-sm">Xem tất cả đơn hàng →</a>
+                    <a th:href="@{/admin/products/create}" class="btn btn-primary btn-sm">➕ Thêm sản phẩm mới</a>
+                </div>
+            </div>
+
+            <div class="admin-table-responsive">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Mã đơn</th>
+                            <th>Khách hàng</th>
+                            <th>Số điện thoại</th>
+                            <th>Ngày đặt</th>
+                            <th>Tổng tiền</th>
+                            <th>Trạng thái</th>
+                            <th style="text-align: right;">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:if="${recentOrders == null or recentOrders.isEmpty()}">
+                            <td colspan="7" style="text-align: center; color: var(--admin-text-muted); padding: 30px;">
+                                Chưa có đơn hàng nào trên hệ thống.
+                            </td>
+                        </tr>
+                        <tr th:each="order : ${recentOrders}">
+                            <td>
+                                <strong style="color: var(--admin-primary); font-family: monospace; font-size: 0.95rem;" th:text="${order.code}">ORD-123456</strong>
+                            </td>
+                            <td>
+                                <strong style="color: var(--admin-text-main);" th:text="${order.fullname}">Nguyễn Văn A</strong>
+                            </td>
+                            <td th:text="${order.phone}">0123456789</td>
+                            <td th:text="${#temporals.format(order.orderDate, 'dd/MM/yyyy HH:mm')}">01/01/2026 12:00</td>
+                            <td>
+                                <strong style="color: var(--admin-text-main);" th:text="${#numbers.formatInteger(order.totalPrice, 0, 'POINT')} + ' ₫'">1.000.000 ₫</strong>
+                            </td>
+                            <td>
+                                <span class="admin-status status-pending" th:if="${order.status.name() == 'PENDING'}">⏳ Chờ xử lý</span>
+                                <span class="admin-status status-confirmed" th:if="${order.status.name() == 'CONFIRMED'}">✓ Đã xác nhận</span>
+                                <span class="admin-status status-shipping" th:if="${order.status.name() == 'SHIPPING'}">🚚 Đang giao</span>
+                                <span class="admin-status status-completed" th:if="${order.status.name() == 'COMPLETED'}">🎉 Hoàn thành</span>
+                                <span class="admin-status status-cancelled" th:if="${order.status.name() == 'CANCELLED'}">✕ Đã hủy</span>
+                            </td>
+                            <td style="text-align: right;">
+                                <a th:href="@{/admin/orders/{id}(id=${order.id})}" class="btn btn-secondary btn-sm">Chi tiết →</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Khởi tạo các biểu đồ Chart.js -->
+<script th:inline="javascript">
+    document.addEventListener("DOMContentLoaded", function() {
+        // Dữ liệu từ Server truyền qua Model
+        const last7DaysLabels = /*[[${last7DaysLabels}]]*/ [];
+        const last7DaysRevenue = /*[[${last7DaysRevenue}]]*/ [];
+        const last7DaysProfit = /*[[${last7DaysProfit}]]*/ [];
+
+        const categoryLabels = /*[[${categoryLabels}]]*/ [];
+        const categoryRevenues = /*[[${categoryRevenues}]]*/ [];
+
+        const topProductLabels = /*[[${topProductLabels}]]*/ [];
+        const topProductRevenues = /*[[${topProductRevenues}]]*/ [];
+        const topProductProfits = /*[[${topProductProfits}]]*/ [];
+
+        const statusLabels = /*[[${statusLabels}]]*/ [];
+        const statusData = /*[[${statusData}]]*/ [];
+
+        // Format tiền tệ VNĐ
+        const formatVND = (value) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+
+        // 1. BIỂU ĐỒ DOANH THU & LỢI NHUẬN (7 NGÀY GẦN NHẤT)
+        const ctxRev = document.getElementById('revenueProfitChart');
+        if (ctxRev) {
+            new Chart(ctxRev, {
+                type: 'line',
+                data: {
+                    labels: last7DaysLabels,
+                    datasets: [
+                        {
+                            label: 'Doanh thu (₫)',
+                            data: last7DaysRevenue,
+                            borderColor: '#4f46e5',
+                            backgroundColor: 'rgba(79, 70, 229, 0.08)',
+                            borderWidth: 2.5,
+                            fill: true,
+                            tension: 0.35,
+                            pointBackgroundColor: '#4f46e5',
+                            pointHoverRadius: 6
+                        },
+                        {
+                            label: 'Lợi nhuận (35%)',
+                            data: last7DaysProfit,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                            borderWidth: 2.5,
+                            fill: true,
+                            tension: 0.35,
+                            pointBackgroundColor: '#10b981',
+                            pointHoverRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + formatVND(context.raw);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: '#f1f5f9' },
+                            ticks: { color: '#64748b', font: { family: 'Plus Jakarta Sans', size: 11 } }
+                        },
+                        y: {
+                            grid: { color: '#f1f5f9' },
+                            ticks: {
+                                color: '#64748b',
+                                font: { family: 'Plus Jakarta Sans', size: 11 },
+                                callback: function(value) {
+                                    if (value >= 1000000) return (value / 1000000) + ' tr';
+                                    if (value >= 1000) return (value / 1000) + ' k';
+                                    return value;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 2. BIỂU ĐỒ CƠ CẤU DOANH THU THEO DANH MỤC (DOUGHNUT)
+        const ctxCat = document.getElementById('categoryChart');
+        if (ctxCat) {
+            new Chart(ctxCat, {
+                type: 'doughnut',
+                data: {
+                    labels: categoryLabels,
+                    datasets: [{
+                        data: categoryRevenues,
+                        backgroundColor: [
+                            '#4f46e5', // Indigo
+                            '#0ea5e9', // Sky
+                            '#10b981', // Emerald
+                            '#f59e0b', // Amber
+                            '#8b5cf6', // Purple
+                            '#ec4899'  // Pink
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                boxWidth: 12,
+                                padding: 12,
+                                color: '#475569',
+                                font: { family: 'Plus Jakarta Sans', size: 11 }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ' ' + context.label + ': ' + formatVND(context.raw);
+                                }
+                            }
+                        }
+                    },
+                    cutout: '68%'
+                }
+            });
+        }
+
+        // 3. BIỂU ĐỒ TOP 5 SẢN PHẨM SINH LỜI (BAR CHART)
+        const ctxTop = document.getElementById('topProductsChart');
+        if (ctxTop) {
+            new Chart(ctxTop, {
+                type: 'bar',
+                data: {
+                    labels: topProductLabels,
+                    datasets: [
+                        {
+                            label: 'Doanh thu',
+                            data: topProductRevenues,
+                            backgroundColor: '#4f46e5',
+                            borderRadius: 6
+                        },
+                        {
+                            label: 'Lợi nhuận',
+                            data: topProductProfits,
+                            backgroundColor: '#10b981',
+                            borderRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                boxWidth: 12,
+                                color: '#475569',
+                                font: { family: 'Plus Jakarta Sans', size: 11 }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + formatVND(context.raw);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#64748b', font: { family: 'Plus Jakarta Sans', size: 10 } }
+                        },
+                        y: {
+                            grid: { color: '#f1f5f9' },
+                            ticks: {
+                                color: '#64748b',
+                                font: { family: 'Plus Jakarta Sans', size: 11 },
+                                callback: function(value) {
+                                    if (value >= 1000000) return (value / 1000000) + ' tr';
+                                    return value;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 4. BIỂU ĐỒ TRẠNG THÁI ĐƠN HÀNG (POLAR AREA / PIE)
+        const ctxStatus = document.getElementById('orderStatusChart');
+        if (ctxStatus) {
+            new Chart(ctxStatus, {
+                type: 'pie',
+                data: {
+                    labels: statusLabels,
+                    datasets: [{
+                        data: statusData,
+                        backgroundColor: [
+                            '#f59e0b', // Chờ xử lý: Amber
+                            '#0ea5e9', // Đã xác nhận: Sky
+                            '#8b5cf6', // Đang giao: Purple
+                            '#10b981', // Hoàn thành: Emerald
+                            '#ef4444'  // Đã hủy: Rose
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                boxWidth: 12,
+                                padding: 12,
+                                color: '#475569',
+                                font: { family: 'Plus Jakarta Sans', size: 11 }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    });
+</script>
+
+</body>
+</html>

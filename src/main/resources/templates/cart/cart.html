@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Giỏ hàng - Aura</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+<div th:replace="~{layout/header :: header}"></div>
+
+<div class="container cart-page">
+    <h1>🛒 Giỏ hàng của bạn</h1>
+
+    <!-- Cart Has Items -->
+    <div th:if="${cartItems != null and !cartItems.isEmpty()}">
+        <div class="cart-layout">
+            <!-- Cart Items List -->
+            <div class="cart-items">
+                <div th:each="item : ${cartItems}" class="cart-item">
+                    <div class="cart-item-img">
+                        <a th:href="@{/product/{id}(id=${item.productId})}">
+                            <img th:src="${item.thumbnail}" th:alt="${item.productTitle}" onerror="this.style.display='none'"/>
+                        </a>
+                    </div>
+                    <div class="cart-item-info">
+                        <a th:href="@{/product/{id}(id=${item.productId})}">
+                            <h3 th:text="${item.productTitle}">Tên sản phẩm</h3>
+                        </a>
+                        <span class="item-category" th:if="${item.discount != null and item.discount > 0}">
+                            Giảm <span th:text="${item.discount}">0</span>%
+                        </span>
+                    </div>
+                    <div class="cart-item-price" th:text="${#numbers.formatInteger(item.discountPrice, 0, 'POINT')} + ' ₫'">1.290.000 ₫</div>
+                    <div class="qty-control">
+                        <button type="button" class="qty-btn" data-action="decrease">−</button>
+                        <input type="number" class="qty-input cart-qty-input" th:value="${item.quantity}" min="1" max="99" th:data-product-id="${item.productId}"/>
+                        <button type="button" class="qty-btn" data-action="increase">+</button>
+                    </div>
+                    <div class="cart-item-subtotal" th:text="${#numbers.formatInteger(item.subtotal, 0, 'POINT')} + ' ₫'">2.580.000 ₫</div>
+                    <a th:href="@{/cart/remove/{id}(id=${item.productId})}" class="cart-item-remove" title="Xóa khỏi giỏ">✕</a>
+                </div>
+            </div>
+
+            <!-- Cart Summary -->
+            <div class="cart-summary">
+                <h2>Tóm tắt đơn hàng</h2>
+                <div class="cart-summary-row">
+                    <span>Số lượng sản phẩm</span>
+                    <span th:text="${totalQuantity}">3</span>
+                </div>
+                <div class="cart-summary-row">
+                    <span>Tạm tính</span>
+                    <span th:text="${#numbers.formatInteger(totalAmount, 0, 'POINT')} + ' ₫'">3.870.000 ₫</span>
+                </div>
+                <div class="cart-summary-row">
+                    <span>Phí vận chuyển</span>
+                    <span style="color: var(--neon-green);">Miễn phí</span>
+                </div>
+                <div class="cart-summary-row total">
+                    <span>Tổng cộng</span>
+                    <span class="amount" th:text="${#numbers.formatInteger(totalAmount, 0, 'POINT')} + ' ₫'">3.870.000 ₫</span>
+                </div>
+                <a th:href="@{/checkout}" class="btn btn-primary btn-lg btn-block" style="margin-top: 20px;">Tiến hành thanh toán →</a>
+                <a th:href="@{/cart/clear}" class="btn btn-secondary btn-sm btn-block" style="margin-top: 10px;" onclick="return confirm('Bạn chắc chắn muốn xóa toàn bộ giỏ hàng?');">🗑️ Xóa toàn bộ giỏ hàng</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cart Empty -->
+    <div th:if="${cartItems == null or cartItems.isEmpty()}" class="cart-empty">
+        <div class="empty-icon">🛒</div>
+        <h2>Giỏ hàng đang trống</h2>
+        <p>Hãy thêm sản phẩm yêu thích vào giỏ hàng nhé!</p>
+        <a th:href="@{/search}" class="btn btn-primary btn-lg">🛍️ Mua sắm ngay</a>
+    </div>
+</div>
+
+<div th:replace="~{layout/footer :: footer}"></div>
+<script th:src="@{/js/main.js}"></script>
+</body>
+</html>

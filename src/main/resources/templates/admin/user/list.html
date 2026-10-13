@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/layout/admin-layout :: admin-head('Quản lý Tài khoản')}"></head>
+<body>
+
+<div th:replace="~{admin/layout/admin-layout :: admin-layout(~{::#user-list-content}, 'Quản lý Tài khoản')}">
+    <div id="user-list-content">
+
+        <div class="admin-card">
+            <!-- Header -->
+            <div class="admin-card-header">
+                <h2>
+                    <span>👥 Danh sách tài khoản người dùng</span>
+                    <span style="font-size: 0.88rem; color: var(--text-muted); font-weight: normal;" 
+                          th:text="'(' + ${users.size()} + ' tài khoản)'">
+                        (0 tài khoản)
+                    </span>
+                </h2>
+                <div style="font-size: 0.85rem; color: var(--text-muted);">
+                    Hệ thống xác thực tài khoản & phân quyền
+                </div>
+            </div>
+
+            <!-- Users Table -->
+            <div class="admin-table-responsive">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Tài khoản</th>
+                            <th>Họ và tên</th>
+                            <th>Email</th>
+                            <th>Vai trò (Role)</th>
+                            <th>Đơn hàng</th>
+                            <th style="text-align: right;">Cấp / Đổi quyền</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:if="${users.isEmpty()}">
+                            <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 30px;">
+                                Chưa có người dùng nào.
+                            </td>
+                        </tr>
+                        <tr th:each="u : ${users}">
+                            <td style="color: var(--text-muted);" th:text="'#' + ${u.id}">#1</td>
+                            <td>
+                                <strong style="color: var(--neon-cyan); font-size: 0.95rem;" th:text="${u.username}">username</strong>
+                                <span th:if="${session.currentUser != null and session.currentUser.id == u.id}" 
+                                      style="display: inline-block; margin-left: 6px; font-size: 0.72rem; padding: 2px 8px; border-radius: var(--radius-full); background: rgba(0, 212, 255, 0.15); color: var(--neon-cyan); font-weight: 600;">
+                                    (Bạn)
+                                </span>
+                            </td>
+                            <td>
+                                <span th:text="${u.fullname != null and !u.fullname.isEmpty() ? u.fullname : '-'}" style="color: var(--text-white);">Nguyễn Văn A</span>
+                            </td>
+                            <td>
+                                <span th:text="${u.email != null and !u.email.isEmpty() ? u.email : '-'}" style="color: var(--text-secondary);">email@example.com</span>
+                            </td>
+                            <td>
+                                <span th:if="${u.role == 'ADMIN'}" class="role-admin">
+                                    🛡️ Quản trị viên
+                                </span>
+                                <span th:if="${u.role != 'ADMIN'}" class="role-user">
+                                    👤 Thành viên
+                                </span>
+                            </td>
+                            <td>
+                                <span style="font-weight: 600; color: var(--text-white);" th:text="${u.orders != null ? u.orders.size() : 0} + ' đơn'">
+                                    0 đơn
+                                </span>
+                            </td>
+                            <td style="text-align: right;">
+                                <!-- Nếu là chính mình: Không cho tự hạ quyền -->
+                                <div th:if="${session.currentUser != null and session.currentUser.id == u.id}">
+                                    <span style="font-size: 0.8rem; color: var(--text-muted); font-style: italic;">
+                                        Đang đăng nhập
+                                    </span>
+                                </div>
+
+                                <!-- Nếu là tài khoản khác: Cho phép thăng/hạ quyền -->
+                                <div th:if="${session.currentUser == null or session.currentUser.id != u.id}">
+                                    <!-- Nâng lên ADMIN -->
+                                    <form th:if="${u.role != 'ADMIN'}" th:action="@{/admin/users/change-role}" method="post" 
+                                          onsubmit="return confirm('Bạn có chắc chắn muốn cấp quyền Quản trị viên (ADMIN) cho người dùng này?')" style="display: inline;">
+                                        <input type="hidden" name="userId" th:value="${u.id}"/>
+                                        <input type="hidden" name="role" value="ADMIN"/>
+                                        <button type="submit" class="btn btn-secondary btn-sm" style="color: var(--neon-cyan); border-color: rgba(0, 212, 255, 0.4);">
+                                            ⚡ Cấp quyền Admin
+                                        </button>
+                                    </form>
+
+                                    <!-- Hạ xuống USER -->
+                                    <form th:if="${u.role == 'ADMIN'}" th:action="@{/admin/users/change-role}" method="post" 
+                                          onsubmit="return confirm('Bạn có chắc chắn muốn hạ quyền Quản trị viên xuống Thành viên (USER)?')" style="display: inline;">
+                                        <input type="hidden" name="userId" th:value="${u.id}"/>
+                                        <input type="hidden" name="role" value="USER"/>
+                                        <button type="submit" class="btn btn-secondary btn-sm" style="color: var(--neon-pink); border-color: rgba(255, 51, 102, 0.4);">
+                                            🔻 Hạ quyền User
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Role guide note -->
+            <div style="margin-top: 24px; padding: 16px; background: var(--bg-tertiary); border-radius: var(--radius-md); border-left: 3px solid var(--neon-cyan); font-size: 0.84rem; color: var(--text-secondary); line-height: 1.6;">
+                <strong style="color: var(--text-white);">💡 Chú thích phân quyền:</strong><br/>
+                • <strong>🛡️ Quản trị viên (ADMIN):</strong> Có toàn quyền truy cập trang quản trị hệ thống, quản lý kho hàng, tạo/sửa/xóa sản phẩm, danh mục, duyệt và cập nhật đơn hàng, phân quyền người dùng.<br/>
+                • <strong>👤 Thành viên (USER):</strong> Khách hàng tiêu chuẩn, có thể mua sắm, lưu giỏ hàng bền vững, theo dõi lịch sử đơn hàng cá nhân.<br/>
+                • Bạn không thể tự hạ quyền của chính mình khi đang đăng nhập tài khoản quản trị.
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="admin-head(title)">
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title th:text="${title != null ? title + ' - Aura Admin' : 'Aura Admin Portal'}">Aura Admin Portal</title>
+    <link rel="stylesheet" th:href="@{/css/admin.css}"/>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<!-- Admin Layout Fragment -->
+<div th:fragment="admin-layout(content, title)" class="admin-layout">
+
+    <!-- Admin Left Sidebar -->
+    <aside class="admin-sidebar">
+        <div class="admin-sidebar-header">
+            <a th:href="@{/}" class="logo" style="font-size: 1.15rem;">
+                <img th:src="@{/images/logo.svg}" alt="Aura" style="width: 30px; height: 30px;"/>
+                <span>Au<span style="color: var(--neon-cyan);">ra</span></span>
+            </a>
+            <span class="admin-portal-tag">ADMIN</span>
+        </div>
+
+        <nav class="admin-sidebar-menu">
+            <span class="admin-menu-label">Bảng điều khiển</span>
+            <a th:href="@{/admin}" class="admin-nav-item" th:classappend="${currentMenu == 'dashboard'} ? 'active'">
+                <span class="nav-icon">📊</span>
+                <span>Tổng quan</span>
+            </a>
+
+            <span class="admin-menu-label">Quản lý kho & danh mục</span>
+            <a th:href="@{/admin/products}" class="admin-nav-item" th:classappend="${currentMenu == 'products'} ? 'active'">
+                <span class="nav-icon">📦</span>
+                <span>Sản phẩm</span>
+            </a>
+            <a th:href="@{/admin/categories}" class="admin-nav-item" th:classappend="${currentMenu == 'categories'} ? 'active'">
+                <span class="nav-icon">📁</span>
+                <span>Danh mục</span>
+            </a>
+
+            <span class="admin-menu-label">Bán hàng & Khách hàng</span>
+            <a th:href="@{/admin/orders}" class="admin-nav-item" th:classappend="${currentMenu == 'orders'} ? 'active'">
+                <span class="nav-icon">🧾</span>
+                <span>Đơn hàng</span>
+            </a>
+            <a th:href="@{/admin/users}" class="admin-nav-item" th:classappend="${currentMenu == 'users'} ? 'active'">
+                <span class="nav-icon">👥</span>
+                <span>Tài khoản</span>
+            </a>
+
+            <span class="admin-menu-label">Khác</span>
+            <a th:href="@{/}" class="admin-nav-item" target="_blank">
+                <span class="nav-icon">🌐</span>
+                <span>Xem trang chủ ↗</span>
+            </a>
+        </nav>
+
+        <div class="admin-sidebar-footer">
+            <a th:href="@{/logout}" class="btn btn-secondary btn-block btn-sm" style="color: var(--admin-danger-text); border-color: #fecaca; background-color: var(--admin-danger-light);">
+                🚪 Đăng xuất
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="admin-main">
+        <!-- Topbar -->
+        <header class="admin-topbar">
+            <div class="admin-topbar-title">
+                <h1 th:text="${title}">Quản trị hệ thống</h1>
+            </div>
+            <div class="admin-topbar-user">
+                <div class="admin-user-info" th:if="${session.currentUser != null}">
+                    <span class="admin-user-name" th:text="${session.currentUser.fullname != null ? session.currentUser.fullname : session.currentUser.username}">Admin Name</span>
+                    <span class="admin-user-badge">● Quản trị viên</span>
+                </div>
+                <div class="user-avatar" style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; box-shadow: 0 2px 5px rgba(79, 70, 229, 0.3);">
+                    A
+                </div>
+            </div>
+        </header>
+
+        <!-- Dynamic Content Body -->
+        <div class="admin-container">
+            <!-- Toast / Alert Flash messages -->
+            <div th:if="${success}" class="toast toast-success" style="position: static; margin-bottom: 20px; display: flex; animation: none;">
+                <span class="toast-icon">✓</span>
+                <span th:text="${success}">Thành công</span>
+            </div>
+            <div th:if="${error}" class="toast toast-error" style="position: static; margin-bottom: 20px; display: flex; animation: none; background: rgba(255, 51, 102, 0.2); border-color: var(--neon-pink);">
+                <span class="toast-icon">✕</span>
+                <span th:text="${error}">Lỗi xảy ra</span>
+            </div>
+
+            <div th:replace="${content}"></div>
+        </div>
+    </main>
+
+</div>
+
+<script th:src="@{/js/main.js}"></script>
+</body>
+</html>

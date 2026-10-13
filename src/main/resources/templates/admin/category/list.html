@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/layout/admin-layout :: admin-head('Quản lý Danh mục')}"></head>
+<body>
+
+<div th:replace="~{admin/layout/admin-layout :: admin-layout(~{::#category-list-content}, 'Quản lý Danh mục')}">
+    <div id="category-list-content">
+
+        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 24px; align-items: start;">
+
+            <!-- Cột Trái: Form thêm danh mục mới -->
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <h2><span>➕ Thêm danh mục</span></h2>
+                </div>
+
+                <form th:action="@{/admin/categories/create}" method="post">
+                    <div class="form-group" style="margin-bottom: 16px;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 8px;">Tên danh mục *</label>
+                        <input type="text" name="name" class="form-control" placeholder="Ví dụ: Ghế Gaming, Màn hình..." required/>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 24px;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 8px;">Đường dẫn icon / ảnh</label>
+                        <input type="text" name="thumbnail" class="form-control" placeholder="/uploads/category-icon.png (hoặc emoji)"/>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block">
+                        Thêm danh mục ngay
+                    </button>
+                </form>
+            </div>
+
+            <!-- Cột Phải: Bảng danh sách danh mục -->
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <h2>
+                        <span>📁 Các danh mục hiện có</span>
+                        <span style="font-size: 0.88rem; color: var(--text-muted); font-weight: normal;" 
+                              th:text="'(' + ${categories.size()} + ' danh mục)'">
+                            (0)
+                        </span>
+                    </h2>
+                </div>
+
+                <div class="admin-table-responsive">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Tên danh mục</th>
+                                <th>Icon/Ảnh</th>
+                                <th>Số sản phẩm</th>
+                                <th style="text-align: right;">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:if="${categories.isEmpty()}">
+                                <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 30px;">
+                                    Chưa có danh mục nào.
+                                </td>
+                            </tr>
+                            <tr th:each="cat : ${categories}">
+                                <td style="color: var(--text-muted);" th:text="'#' + ${cat.id}">#1</td>
+                                <td>
+                                    <strong style="color: var(--text-white);" th:text="${cat.name}">Bàn phím cơ</strong>
+                                </td>
+                                <td>
+                                    <span th:if="${cat.thumbnail != null and !cat.thumbnail.startsWith('/')}" style="font-size: 1.3rem;" th:text="${cat.thumbnail}">⌨️</span>
+                                    <img th:if="${cat.thumbnail != null and cat.thumbnail.startsWith('/')}" th:src="${cat.thumbnail}" alt="Icon" class="admin-thumb" style="width: 32px; height: 32px;"/>
+                                    <span th:if="${cat.thumbnail == null}" style="color: var(--text-muted);">-</span>
+                                </td>
+                                <td>
+                                    <span class="admin-status status-confirmed" 
+                                          th:text="${productCountMap.get(cat.id)} + ' sản phẩm'">
+                                        0 sản phẩm
+                                    </span>
+                                </td>
+                                <td style="text-align: right;">
+                                    <div style="display: inline-flex; gap: 8px;">
+                                        <!-- Nút sửa nhanh (Toggle inline form) -->
+                                        <button type="button" class="btn btn-secondary btn-sm" 
+                                                th:onclick="'toggleEditCat(' + ${cat.id} + ')'">
+                                            ✏️ Sửa
+                                        </button>
+
+                                        <!-- Nút xóa -->
+                                        <form th:action="@{/admin/categories/delete/{id}(id=${cat.id})}" method="post" 
+                                              onsubmit="return confirm('Bạn có chắc chắn muốn xóa danh mục này?')" style="display: inline;">
+                                            <button type="submit" class="btn btn-danger btn-sm">
+                                                🗑️ Xóa
+                                            </button>
+                                        </form>
+                                    </div>
+
+                                    <!-- Inline Edit Row (Ẩn mặc định) -->
+                                    <div th:id="'edit-cat-box-' + ${cat.id}" style="display: none; margin-top: 10px; text-align: left; padding: 12px; background: var(--bg-tertiary); border-radius: var(--radius-sm);">
+                                        <form th:action="@{/admin/categories/edit/{id}(id=${cat.id})}" method="post" style="display: flex; gap: 8px; flex-direction: column;">
+                                            <input type="text" name="name" class="form-control form-control-sm" th:value="${cat.name}" required/>
+                                            <input type="text" name="thumbnail" class="form-control form-control-sm" th:value="${cat.thumbnail}" placeholder="Icon / Đường dẫn"/>
+                                            <div style="display: flex; gap: 6px; justify-content: flex-end;">
+                                                <button type="button" class="btn btn-secondary btn-sm" th:onclick="'toggleEditCat(' + ${cat.id} + ')'">Hủy</button>
+                                                <button type="submit" class="btn btn-primary btn-sm">Lưu</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+<script>
+    function toggleEditCat(id) {
+        var box = document.getElementById('edit-cat-box-' + id);
+        if (box) {
+            box.style.display = box.style.display === 'none' ? 'block' : 'none';
+        }
+    }
+</script>
+</body>
+</html>

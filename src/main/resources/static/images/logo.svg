@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="auraBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0e1726"/>
+      <stop offset="100%" stop-color="#070b12"/>
+    </linearGradient>
+
+    <!-- Neon Aura Cyan to Purple Gradient -->
+    <linearGradient id="auraGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f2fe"/>
+      <stop offset="45%" stop-color="#06b6d4"/>
+      <stop offset="100%" stop-color="#8b5cf6"/>
+    </linearGradient>
+
+    <!-- Inner Core Glow -->
+    <linearGradient id="coreGlow" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+
+    <filter id="neonBlur" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Dark Tech Squircle Background with Glowing Border -->
+  <rect x="2" y="2" width="44" height="44" rx="12" fill="url(#auraBg)" stroke="url(#auraGradient)" stroke-width="1.5"/>
+
+  <!-- Ambient Light Pulse -->
+  <circle cx="24" cy="24" r="16" fill="rgba(6, 182, 212, 0.12)" filter="url(#neonBlur)"/>
+
+  <!-- Futuristic Cybernetic Letter "A" -->
+  <path fill-rule="evenodd" clip-rule="evenodd" 
+        d="M24 9L11 37H17.2L20.2 29.5H27.8L30.8 37H37L24 9ZM24 18.5L21.7 25H26.3L24 18.5Z" 
+        fill="url(#auraGradient)"/>
+
+  <!-- Core White-Cyan Energy Crystal in Center -->
+  <polygon points="24,19 25.8,24.2 22.2,24.2" fill="url(#coreGlow)"/>
+
+  <!-- Cyber Horizon Accent Line -->
+  <line x1="16" y1="29.5" x2="32" y2="29.5" stroke="#00f2fe" stroke-width="1.5" stroke-linecap="round" opacity="0.9"/>
+</svg>

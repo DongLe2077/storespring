@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Danh mục sản phẩm - Aura Gaming</title>
+    <meta name="description" content="Khám phá toàn bộ danh mục sản phẩm gaming gear chính hãng: Bàn phím cơ, Chuột gaming, Tai nghe và Phụ kiện cao cấp tại Aura."/>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+
+<!-- Header -->
+<div th:replace="~{layout/header :: header}"></div>
+
+<div class="container categories-page">
+
+    <!-- Breadcrumb -->
+    <div class="breadcrumb" style="margin-top: 24px;">
+        <a th:href="@{/}">Trang chủ</a>
+        <span class="separator">/</span>
+        <span class="current">Danh mục sản phẩm</span>
+    </div>
+
+    <!-- Page Header / Hero -->
+    <div class="page-header" style="text-align: center; margin: 24px 0 40px 0;">
+        <h1>Danh Mục <span class="gradient-text">Gaming Gear</span></h1>
+        <p style="max-width: 650px; margin: 8px auto 0 auto; color: var(--text-secondary);">
+            Hệ sinh thái thiết bị điện tử và linh kiện gaming chính hãng hàng đầu tại Aura. Khám phá ngay các dòng sản phẩm phục vụ công việc và thi đấu chuyên nghiệp.
+        </p>
+    </div>
+
+    <!-- Category Overview Cards Grid -->
+    <div class="category-overview-grid">
+        <div th:each="catItem : ${categoryOverviews}" class="category-overview-card animate-fade-in">
+            <div class="category-card-top">
+                <div class="category-icon-box" th:text="${catItem.icon}">🎮</div>
+                <span class="category-count-badge" th:text="${catItem.productCount} + ' sản phẩm'">4 sản phẩm</span>
+            </div>
+            <h2 class="category-card-name" th:text="${catItem.category.name}">Tên danh mục</h2>
+            <p class="category-card-desc" th:text="${catItem.description}">Mô tả ngắn gọn về danh mục sản phẩm</p>
+            <a th:href="@{/category/{id}(id=${catItem.category.id})}" class="btn-category-explore">
+                Khám phá danh mục <span>→</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Category Showcase Sections -->
+    <div class="categories-showcase" style="margin-top: 50px;">
+        <section class="section" th:each="catItem : ${categoryOverviews}" th:if="${catItem.previewProducts != null and !catItem.previewProducts.isEmpty()}">
+            <div class="section-header">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 1.6rem;" th:text="${catItem.icon}">⌨️</span>
+                    <h2 style="margin: 0; font-size: 1.45rem;">
+                        <span th:text="${catItem.category.name}">Tên danh mục</span>
+                    </h2>
+                    <span class="category-inline-count" th:text="'(' + ${catItem.productCount} + ')'">(4)</span>
+                </div>
+                <a th:href="@{/category/{id}(id=${catItem.category.id})}" class="view-all">
+                    Xem tất cả <span th:text="${catItem.category.name}"></span> →
+                </a>
+            </div>
+
+            <!-- Product Grid -->
+            <div class="product-grid">
+                <div th:each="product : ${catItem.previewProducts}" class="product-card animate-fade-in">
+                    <a th:href="@{/product/{id}(id=${product.id})}">
+                        <div class="product-card-img">
+                            <img th:src="${product.thumbnail != null ? product.thumbnail : '/images/logo.svg'}" th:alt="${product.title}" onerror="this.style.display='none'"/>
+                            <div class="product-card-badges">
+                                <span class="badge-sale" th:text="'-' + ${product.discount} + '%'" th:if="${product.discount != null and product.discount > 0}">-15%</span>
+                            </div>
+                        </div>
+                    </a>
+                    <div class="product-card-quick">
+                        <button class="btn-add-cart" th:data-product-id="${product.id}">🛒 Thêm giỏ</button>
+                    </div>
+                    <div class="product-card-body">
+                        <span class="product-card-category" th:text="${product.category != null ? product.category.name : ''}">Category</span>
+                        <a th:href="@{/product/{id}(id=${product.id})}">
+                            <h3 class="product-card-title" th:text="${product.title}">Tên sản phẩm</h3>
+                        </a>
+                        <div class="product-card-price">
+                            <span class="price-current" th:text="${#numbers.formatInteger(product.discountedPrice, 0, 'POINT')} + ' ₫'">1.290.000 ₫</span>
+                            <span class="price-original" th:if="${product.discount != null and product.discount > 0}" th:text="${#numbers.formatInteger(product.price, 0, 'POINT')} + ' ₫'">1.690.000 ₫</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Empty State if no categories -->
+    <div class="cart-empty" th:if="${categoryOverviews == null or categoryOverviews.isEmpty()}" style="margin: 60px 0;">
+        <div class="empty-icon">📁</div>
+        <h2>Chưa có danh mục sản phẩm</h2>
+        <p>Hệ thống đang được cập nhật thêm các danh mục mới. Vui lòng quay lại sau!</p>
+        <a th:href="@{/}" class="btn btn-primary">← Về trang chủ</a>
+    </div>
+
+</div>
+
+<!-- Footer -->
+<div th:replace="~{layout/footer :: footer}"></div>
+
+<script th:src="@{/js/main.js}"></script>
+</body>
+</html>

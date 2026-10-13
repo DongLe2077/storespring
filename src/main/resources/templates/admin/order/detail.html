@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/layout/admin-layout :: admin-head('Chi tiết đơn hàng #' + ${order.code})}"></head>
+<body>
+
+<div th:replace="~{admin/layout/admin-layout :: admin-layout(~{::#order-detail-content}, 'Chi tiết đơn hàng #' + ${order.code})}">
+    <div id="order-detail-content">
+
+        <!-- Top Navigation -->
+        <div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+            <a th:href="@{/admin/orders}" class="btn btn-secondary btn-sm">← Quay lại danh sách đơn hàng</a>
+            <span style="color: var(--text-muted); font-size: 0.88rem;">
+                Thời gian đặt: <strong style="color: var(--text-white);" th:text="${#temporals.format(order.orderDate, 'dd/MM/yyyy HH:mm:ss')}">01/01/2026</strong>
+            </span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; align-items: start;">
+
+            <!-- Cột Trái: Danh sách mặt hàng trong đơn -->
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <h2><span>📦 Danh sách sản phẩm</span></h2>
+                </div>
+
+                <div class="admin-table-responsive">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Ảnh</th>
+                                <th>Sản phẩm</th>
+                                <th>Đơn giá</th>
+                                <th>Số lượng</th>
+                                <th style="text-align: right;">Thành tiền</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="item : ${order.orderItems}">
+                                <td>
+                                    <img th:src="${item.product != null and item.product.thumbnail != null ? item.product.thumbnail : '/images/logo.svg'}" 
+                                         th:alt="${item.product != null ? item.product.title : 'Sản phẩm'}" 
+                                         class="admin-thumb" onerror="this.src='/images/logo.svg'"/>
+                                </td>
+                                <td>
+                                    <strong style="color: var(--text-white);" 
+                                            th:text="${item.product != null ? item.product.title : 'Sản phẩm đã xóa'}">
+                                        Tên sản phẩm
+                                    </strong>
+                                </td>
+                                <td th:text="${#numbers.formatInteger(item.price, 0, 'POINT')} + ' ₫'">500.000 ₫</td>
+                                <td>
+                                    <span style="font-weight: 700; color: var(--neon-cyan);" th:text="'x' + ${item.quantity}">x1</span>
+                                </td>
+                                <td style="text-align: right;">
+                                    <strong style="color: var(--text-white);" 
+                                            th:text="${#numbers.formatInteger(item.price * item.quantity, 0, 'POINT')} + ' ₫'">
+                                        500.000 ₫
+                                    </strong>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="border-top: 1px solid var(--border-subtle); margin-top: 20px; padding-top: 16px; display: flex; justify-content: flex-end;">
+                    <div style="text-align: right;">
+                        <span style="color: var(--text-muted); display: block; margin-bottom: 4px;">Tổng giá trị đơn hàng:</span>
+                        <span style="font-size: 1.6rem; font-weight: 800; color: var(--neon-cyan);" 
+                              th:text="${#numbers.formatInteger(order.totalPrice, 0, 'POINT')} + ' ₫'">
+                            1.000.000 ₫
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cột Phải: Trạng thái & Thông tin giao hàng -->
+            <div>
+                <!-- Cập nhật trạng thái đơn hàng -->
+                <div class="admin-card">
+                    <div class="admin-card-header">
+                        <h2><span>⚙️ Trạng thái đơn hàng</span></h2>
+                    </div>
+
+                    <form th:action="@{/admin/orders/update-status}" method="post">
+                        <input type="hidden" name="orderId" th:value="${order.id}"/>
+
+                        <div class="form-group" style="margin-bottom: 16px;">
+                            <label style="display: block; font-weight: 600; margin-bottom: 8px;">Trạng thái hiện tại:</label>
+                            <select name="status" class="form-control" style="font-weight: 700;">
+                                <option th:each="st : ${allStatuses}" 
+                                        th:value="${st.name()}" 
+                                        th:text="${st.name() == 'PENDING' ? '⏳ Chờ xử lý' : (st.name() == 'CONFIRMED' ? '✓ Đã xác nhận' : (st.name() == 'SHIPPING' ? '🚚 Đang giao' : (st.name() == 'COMPLETED' ? '🎉 Hoàn thành' : '✕ Đã hủy')))}" 
+                                        th:selected="${order.status == st}">
+                                    Trạng thái
+                                </option>
+                            </select>
+                        </div>
+
+                        <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 16px;">
+                            * Lưu ý: Nếu đổi sang trạng thái <strong>Đã hủy</strong>, hệ thống sẽ tự động hoàn lại số lượng tồn kho cho các sản phẩm trong đơn.
+                        </p>
+
+                        <button type="submit" class="btn btn-primary btn-block">
+                            Cập nhật trạng thái
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Thông tin người nhận -->
+                <div class="admin-card">
+                    <div class="admin-card-header">
+                        <h2><span>👤 Thông tin giao nhận</span></h2>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 12px; font-size: 0.9rem;">
+                        <div>
+                            <span style="color: var(--text-muted); display: block; font-size: 0.78rem;">Người nhận:</span>
+                            <strong style="color: var(--text-white);" th:text="${order.fullname}">Nguyễn Văn A</strong>
+                        </div>
+                        <div>
+                            <span style="color: var(--text-muted); display: block; font-size: 0.78rem;">Số điện thoại:</span>
+                            <a th:href="'tel:' + ${order.phone}" style="color: var(--neon-cyan); font-weight: 600;" th:text="${order.phone}">0123456789</a>
+                        </div>
+                        <div>
+                            <span style="color: var(--text-muted); display: block; font-size: 0.78rem;">Địa chỉ giao hàng:</span>
+                            <span th:text="${order.address}">123 Đường ABC, Quận 1, TP.HCM</span>
+                        </div>
+                        <div>
+                            <span style="color: var(--text-muted); display: block; font-size: 0.78rem;">Phương thức thanh toán:</span>
+                            <span th:if="${order.paymentMethod == 'COD'}" class="status-badge" style="background: rgba(16,185,129,0.15); color: var(--neon-green); border: 1px solid rgba(16,185,129,0.3); font-weight: 700;">💵 Tiền mặt khi nhận hàng (COD)</span>
+                            <span th:if="${order.paymentMethod == 'BANK_TRANSFER'}" class="status-badge" style="background: rgba(6,182,212,0.15); color: var(--neon-cyan); border: 1px solid rgba(6,182,212,0.3); font-weight: 700;">🏦 Chuyển khoản VietQR 24/7</span>
+                            <span th:if="${order.paymentMethod == 'MOMO'}" class="status-badge" style="background: rgba(216,45,139,0.15); color: #d82d8b; border: 1px solid rgba(216,45,139,0.3); font-weight: 700;">👛 Ví MoMo</span>
+                            <span th:if="${order.paymentMethod == 'VNPAY'}" class="status-badge" style="background: rgba(0,91,170,0.15); color: #38bdf8; border: 1px solid rgba(0,91,170,0.3); font-weight: 700;">📱 VNPAY-QR</span>
+                            <span th:if="${order.paymentMethod == 'CREDIT_CARD'}" class="status-badge" style="background: rgba(139,92,246,0.15); color: var(--neon-purple); border: 1px solid rgba(139,92,246,0.3); font-weight: 700;">💳 Thẻ quốc tế Visa/MasterCard</span>
+                            <span th:if="${order.paymentMethod == null or (order.paymentMethod != 'COD' and order.paymentMethod != 'BANK_TRANSFER' and order.paymentMethod != 'MOMO' and order.paymentMethod != 'VNPAY' and order.paymentMethod != 'CREDIT_CARD')}" class="status-badge" style="background: rgba(16,185,129,0.15); color: var(--neon-green); border: 1px solid rgba(16,185,129,0.3); font-weight: 700;">💵 Tiền mặt (COD)</span>
+                        </div>
+                        <div th:if="${order.note != null and !order.note.trim().isEmpty()}">
+                            <span style="color: var(--text-muted); display: block; font-size: 0.78rem;">Ghi chú từ khách:</span>
+                            <span style="font-style: italic; color: #f97316;" th:text="${order.note}">Giao giờ hành chính</span>
+                        </div>
+                        <div th:if="${order.user != null}">
+                            <span style="color: var(--text-muted); display: block; font-size: 0.78rem;">Tài khoản Aura:</span>
+                            <span th:text="${order.user.username} + ' (' + ${order.user.email} + ')'">user (user@example.com)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+</body>
+</html>

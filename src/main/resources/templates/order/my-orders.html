@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Lịch sử đơn hàng - Aura</title>
+    <meta name="description" content="Xem và theo dõi trạng thái lịch sử đơn hàng của bạn tại Aura."/>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+
+<!-- Header -->
+<div th:replace="~{layout/header :: header}"></div>
+
+<div class="container" style="padding-top: 40px; padding-bottom: 80px; min-height: 70vh;">
+    <!-- Breadcrumb -->
+    <div class="breadcrumb">
+        <a th:href="@{/}">Trang chủ</a>
+        <span>/</span>
+        <span class="active">Lịch sử đơn hàng</span>
+    </div>
+
+    <!-- User Profile Header Banner -->
+    <div class="glass-card" style="margin-bottom: 32px; padding: 28px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px;">
+        <div style="display: flex; align-items: center; gap: 18px;">
+            <div style="width: 58px; height: 58px; border-radius: 50%; background: var(--gradient-cyan-purple); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: #fff; box-shadow: 0 0 20px var(--neon-cyan-glow);">
+                👤
+            </div>
+            <div>
+                <h1 style="font-size: 1.45rem; font-weight: 700; margin-bottom: 4px;">
+                    Xin chào, <span class="gradient-text" th:text="${session.currentUser != null ? (session.currentUser.fullname ?: session.currentUser.username) : 'Quý khách'}">Tên người dùng</span>
+                </h1>
+                <p style="color: var(--text-secondary); font-size: 0.88rem;">
+                    Email: <span th:text="${session.currentUser != null ? session.currentUser.email : 'N/A'}" style="color: var(--text-primary);">user@example.com</span>
+                    <span style="margin: 0 8px; color: var(--border-light);">|</span>
+                    Vai trò: <span class="badge" th:text="${session.currentUser != null ? session.currentUser.role : 'USER'}" style="background: rgba(6,182,212,0.15); color: var(--neon-cyan); border: 1px solid var(--border-accent); font-size: 0.75rem; padding: 2px 8px; border-radius: 4px;">USER</span>
+                </p>
+            </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <a th:href="@{/search}" class="btn btn-secondary" style="font-size: 0.88rem;">🛒 Tiếp tục mua sắm</a>
+            <a th:href="@{/logout}" class="btn btn-outline" style="font-size: 0.88rem; border-color: rgba(244,63,94,0.3); color: #f43f5e;">Đăng xuất</a>
+        </div>
+    </div>
+
+    <!-- Alert Notifications -->
+    <div class="alert alert-success" th:if="${success}" th:text="${success}"></div>
+    <div class="alert alert-error" th:if="${error}" th:text="${error}"></div>
+
+    <!-- Orders Section Title -->
+    <div class="section-header" style="margin-bottom: 24px;">
+        <h2>Lịch sử <span class="accent">đơn hàng</span></h2>
+        <span style="color: var(--text-muted); font-size: 0.9rem;" th:if="${orders != null}" th:text="'Tổng cộng: ' + ${orders.size()} + ' đơn hàng'">Tổng cộng: 0 đơn hàng</span>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" th:if="${orders == null or orders.isEmpty()}" style="text-align: center; padding: 60px 20px;">
+        <div style="font-size: 4rem; margin-bottom: 16px; filter: drop-shadow(0 0 20px rgba(6,182,212,0.4));">📦</div>
+        <h3 style="font-size: 1.3rem; margin-bottom: 8px;">Bạn chưa có đơn hàng nào</h3>
+        <p style="color: var(--text-secondary); max-width: 440px; margin: 0 auto 24px auto;">
+            Hãy khám phá các thiết bị bàn phím cơ, chuột gaming và tai nghe cao cấp với ưu đãi đặc biệt hôm nay!
+        </p>
+        <a th:href="@{/search}" class="btn btn-primary btn-lg">Khám phá sản phẩm ngay →</a>
+    </div>
+
+    <!-- Orders List -->
+    <div class="orders-list" th:if="${orders != null and !orders.isEmpty()}" style="display: flex; flex-direction: column; gap: 24px;">
+        <div th:each="order : ${orders}" class="glass-card" style="padding: 24px; border-radius: var(--radius-lg); transition: all 0.3s ease;">
+            <!-- Order Header -->
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; padding-bottom: 18px; border-bottom: 1px solid var(--border-subtle); margin-bottom: 20px;">
+                <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+                    <span style="font-size: 1.05rem; font-weight: 700; color: #fff;">
+                        Đơn hàng <span style="color: var(--neon-cyan);" th:text="'#' + ${order.code}">#ORD-123456</span>
+                    </span>
+                    <span style="font-size: 0.82rem; color: var(--text-muted);" th:text="${#temporals.format(order.orderDate, 'HH:mm - dd/MM/yyyy')}">14:30 - 29/09/2026</span>
+                    <span th:if="${order.paymentMethod == 'COD' or order.paymentMethod == null}" style="font-size: 0.76rem; padding: 2px 8px; border-radius: 12px; background: rgba(16,185,129,0.12); color: var(--neon-green); border: 1px solid rgba(16,185,129,0.25);">💵 COD</span>
+                    <span th:if="${order.paymentMethod == 'BANK_TRANSFER'}" style="font-size: 0.76rem; padding: 2px 8px; border-radius: 12px; background: rgba(6,182,212,0.12); color: var(--neon-cyan); border: 1px solid rgba(6,182,212,0.25);">🏦 VietQR</span>
+                    <span th:if="${order.paymentMethod == 'MOMO'}" style="font-size: 0.76rem; padding: 2px 8px; border-radius: 12px; background: rgba(216,45,139,0.12); color: #f472b6; border: 1px solid rgba(216,45,139,0.25);">👛 MoMo</span>
+                    <span th:if="${order.paymentMethod == 'VNPAY'}" style="font-size: 0.76rem; padding: 2px 8px; border-radius: 12px; background: rgba(0,91,170,0.12); color: #38bdf8; border: 1px solid rgba(0,91,170,0.25);">📱 VNPAY</span>
+                    <span th:if="${order.paymentMethod == 'CREDIT_CARD'}" style="font-size: 0.76rem; padding: 2px 8px; border-radius: 12px; background: rgba(139,92,246,0.12); color: var(--neon-purple); border: 1px solid rgba(139,92,246,0.25);">💳 Thẻ QT</span>
+                </div>
+
+                <!-- Status Badge -->
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <span th:if="${order.status.name() == 'PENDING'}"
+                          style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); padding: 4px 12px; border-radius: 20px; font-size: 0.82rem; font-weight: 600;">
+                        ⏳ Chờ xử lý
+                    </span>
+                    <span th:if="${order.status.name() == 'CONFIRMED'}"
+                          style="background: rgba(6, 182, 212, 0.15); color: var(--neon-cyan); border: 1px solid rgba(6, 182, 212, 0.3); padding: 4px 12px; border-radius: 20px; font-size: 0.82rem; font-weight: 600;">
+                        ✓ Đã xác nhận
+                    </span>
+                    <span th:if="${order.status.name() == 'SHIPPING'}"
+                          style="background: rgba(139, 92, 246, 0.15); color: var(--neon-purple); border: 1px solid rgba(139, 92, 246, 0.3); padding: 4px 12px; border-radius: 20px; font-size: 0.82rem; font-weight: 600;">
+                        🚚 Đang giao hàng
+                    </span>
+                    <span th:if="${order.status.name() == 'COMPLETED'}"
+                          style="background: rgba(16, 185, 129, 0.15); color: var(--neon-green); border: 1px solid rgba(16, 185, 129, 0.3); padding: 4px 12px; border-radius: 20px; font-size: 0.82rem; font-weight: 600;">
+                        ★ Giao thành công
+                    </span>
+                    <span th:if="${order.status.name() == 'CANCELLED'}"
+                          style="background: rgba(244, 63, 94, 0.15); color: var(--neon-red); border: 1px solid rgba(244, 63, 94, 0.3); padding: 4px 12px; border-radius: 20px; font-size: 0.82rem; font-weight: 600;">
+                        ✕ Đã hủy
+                    </span>
+                </div>
+            </div>
+
+            <!-- Items in this Order -->
+            <div style="display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px;">
+                <div th:each="item : ${order.orderItems}" style="display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 14px; background: rgba(11,15,25,0.6); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
+                    <div style="display: flex; align-items: center; gap: 14px;">
+                        <img th:src="${item.product != null and item.product.thumbnail != null ? item.product.thumbnail : '/images/logo.svg'}"
+                             th:alt="${item.product != null ? item.product.title : 'Sản phẩm'}"
+                             style="width: 52px; height: 52px; object-fit: cover; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);"
+                             onerror="this.src='/images/logo.svg'"/>
+                        <div>
+                            <a th:if="${item.product != null}" th:href="@{/product/{id}(id=${item.product.id})}"
+                               style="font-size: 0.95rem; font-weight: 600; color: #fff; transition: color 0.2s;"
+                               onmouseover="this.style.color='var(--neon-cyan)'" onmouseout="this.style.color='#fff'"
+                               th:text="${item.product.title}">Tên sản phẩm</a>
+                            <span th:if="${item.product == null}" style="color: var(--text-muted); font-size: 0.95rem;">Sản phẩm đã ngừng kinh doanh</span>
+                            <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 3px;">
+                                Đơn giá: <span th:text="${#numbers.formatDecimal(item.price, 0, 'POINT', 0, 'COMMA')} + '₫'">0₫</span>
+                                <span style="margin: 0 6px;">×</span>
+                                Số lượng: <strong style="color: var(--text-primary);" th:text="${item.quantity}">1</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="font-size: 0.98rem; font-weight: 700; color: var(--neon-cyan);"
+                         th:text="${#numbers.formatDecimal(item.subtotal, 0, 'POINT', 0, 'COMMA')} + '₫'">
+                        0₫
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Details (Shipping Info & Summary) -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 20px; padding-top: 16px; border-top: 1px solid var(--border-subtle);">
+                <div style="font-size: 0.84rem; color: var(--text-secondary); line-height: 1.6; max-width: 500px;">
+                    <div><strong>Người nhận:</strong> <span th:text="${order.fullname ?: (session.currentUser != null ? session.currentUser.fullname : 'N/A')}">Họ tên</span> (<span th:text="${order.phone}">0912345678</span>)</div>
+                    <div><strong>Địa chỉ:</strong> <span th:text="${order.address}">Địa chỉ</span></div>
+                    <div th:if="${order.note != null and !order.note.isEmpty()}"><strong>Ghi chú:</strong> <em th:text="${order.note}">Ghi chú</em></div>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+                    <div style="text-align: right;">
+                        <span style="font-size: 0.85rem; color: var(--text-muted);">Tổng thanh toán:</span>
+                        <div style="font-size: 1.3rem; font-weight: 800; color: #fff; text-shadow: 0 0 10px rgba(6,182,212,0.3);"
+                             th:text="${#numbers.formatDecimal(order.totalPrice, 0, 'POINT', 0, 'COMMA')} + '₫'">
+                            0₫
+                        </div>
+                    </div>
+
+                    <!-- Cancel button if PENDING -->
+                    <form th:if="${order.status.name() == 'PENDING'}" th:action="@{/my-orders/cancel/{id}(id=${order.id})}" method="post"
+                          onsubmit="return confirm('Bạn có chắc chắn muốn hủy đơn hàng này? Thao tác không thể hoàn tác.');">
+                        <button type="submit" class="btn btn-outline" style="border-color: rgba(244,63,94,0.4); color: #f43f5e; font-size: 0.84rem; padding: 8px 16px;">
+                            ✕ Hủy đơn
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Footer -->
+<div th:replace="~{layout/footer :: footer}"></div>
+
+<script th:src="@{/js/main.js}"></script>
+</body>
+</html>

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Tìm kiếm sản phẩm - Aura</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+<div th:replace="~{layout/header :: header}"></div>
+
+<div class="container page-with-sidebar">
+    <!-- Sidebar Filter -->
+    <aside class="sidebar">
+        <form th:action="@{/search}" method="get">
+            <!-- Hidden keyword -->
+            <input type="hidden" name="keyword" th:value="${keyword}"/>
+
+            <!-- Category Filter -->
+            <div class="filter-card">
+                <h3>📂 Danh mục</h3>
+                <div class="filter-list">
+                    <a th:href="@{/search(keyword=${keyword}, sortBy=${sortBy})}"
+                       th:classappend="${categoryId == null} ? 'active'">Tất cả danh mục</a>
+                    <a th:each="cat : ${categories}"
+                       th:href="@{/search(keyword=${keyword}, categoryId=${cat.id}, sortBy=${sortBy})}"
+                       th:classappend="${categoryId != null and categoryId == cat.id} ? 'active'"
+                       th:text="${cat.name}">Danh mục</a>
+                </div>
+            </div>
+
+            <!-- Price Filter -->
+            <div class="filter-card">
+                <h3>💰 Khoảng giá</h3>
+                <div class="price-range-inputs">
+                    <input type="number" name="minPrice" placeholder="Từ" th:value="${minPrice}" min="0"/>
+                    <span>—</span>
+                    <input type="number" name="maxPrice" placeholder="Đến" th:value="${maxPrice}" min="0"/>
+                </div>
+                <input type="hidden" name="categoryId" th:value="${categoryId}"/>
+                <input type="hidden" name="sortBy" th:value="${sortBy}"/>
+                <button type="submit" class="btn btn-primary btn-sm btn-block" style="margin-top: 12px;">Lọc giá</button>
+            </div>
+
+            <!-- Quick Price Filters -->
+            <div class="filter-card">
+                <h3>⚡ Lọc nhanh</h3>
+                <div class="filter-list">
+                    <a th:href="@{/search(keyword=${keyword}, categoryId=${categoryId}, maxPrice=500000, sortBy=${sortBy})}">Dưới 500.000₫</a>
+                    <a th:href="@{/search(keyword=${keyword}, categoryId=${categoryId}, minPrice=500000, maxPrice=1000000, sortBy=${sortBy})}">500.000₫ — 1 Triệu</a>
+                    <a th:href="@{/search(keyword=${keyword}, categoryId=${categoryId}, minPrice=1000000, maxPrice=2000000, sortBy=${sortBy})}">1 Triệu — 2 Triệu</a>
+                    <a th:href="@{/search(keyword=${keyword}, categoryId=${categoryId}, minPrice=2000000, sortBy=${sortBy})}">Trên 2 Triệu</a>
+                </div>
+            </div>
+        </form>
+    </aside>
+
+    <!-- Main Content -->
+    <main>
+        <!-- Search Results Header -->
+        <div th:if="${keyword != null and keyword != ''}">
+            <h1 style="font-size: 1.4rem; margin-bottom: 6px;">Kết quả tìm kiếm: "<span th:text="${keyword}" style="color: var(--neon-cyan);"></span>"</h1>
+        </div>
+        <div th:unless="${keyword != null and keyword != ''}">
+            <h1 style="font-size: 1.4rem; margin-bottom: 6px;">Tất cả sản phẩm</h1>
+        </div>
+
+        <!-- Results Bar -->
+        <div class="results-bar">
+            <span class="results-count">Tìm thấy <strong th:text="${products.totalElements}">0</strong> sản phẩm</span>
+            <form th:action="@{/search}" method="get" style="display:flex;gap:6px;">
+                <input type="hidden" name="keyword" th:value="${keyword}"/>
+                <input type="hidden" name="categoryId" th:value="${categoryId}"/>
+                <input type="hidden" name="minPrice" th:value="${minPrice}"/>
+                <input type="hidden" name="maxPrice" th:value="${maxPrice}"/>
+                <select name="sortBy" class="sort-select" onchange="this.form.submit()">
+                    <option value="newest" th:selected="${sortBy == 'newest'}">Mới nhất</option>
+                    <option value="price_asc" th:selected="${sortBy == 'price_asc'}">Giá tăng dần</option>
+                    <option value="price_desc" th:selected="${sortBy == 'price_desc'}">Giá giảm dần</option>
+                </select>
+            </form>
+        </div>
+
+        <!-- Product Grid -->
+        <div class="product-grid" th:if="${products.totalElements > 0}">
+            <div th:each="product : ${products.content}" class="product-card animate-fade-in">
+                <a th:href="@{/product/{id}(id=${product.id})}">
+                    <div class="product-card-img">
+                        <img th:src="${product.thumbnail}" th:alt="${product.title}" onerror="this.style.display='none'"/>
+                        <div class="product-card-badges">
+                            <span class="badge-sale" th:text="'-' + ${product.discount} + '%'" th:if="${product.discount != null and product.discount > 0}"></span>
+                        </div>
+                    </div>
+                </a>
+                <div class="product-card-quick">
+                    <button class="btn-add-cart" th:data-product-id="${product.id}">🛒 Thêm giỏ</button>
+                </div>
+                <div class="product-card-body">
+                    <span class="product-card-category" th:text="${product.category != null ? product.category.name : ''}"></span>
+                    <a th:href="@{/product/{id}(id=${product.id})}">
+                        <h3 class="product-card-title" th:text="${product.title}">Sản phẩm</h3>
+                    </a>
+                    <div class="product-card-price">
+                        <span class="price-current" th:text="${#numbers.formatInteger(product.discountedPrice, 0, 'POINT')} + ' ₫'"></span>
+                        <span class="price-original" th:if="${product.discount != null and product.discount > 0}" th:text="${#numbers.formatInteger(product.price, 0, 'POINT')} + ' ₫'"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Empty State -->
+        <div class="cart-empty" th:if="${products.totalElements == 0}">
+            <div class="empty-icon">🔍</div>
+            <h2>Không tìm thấy sản phẩm nào</h2>
+            <p>Thử thay đổi từ khóa hoặc bộ lọc khác</p>
+            <a th:href="@{/search}" class="btn btn-primary">Xóa bộ lọc</a>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination" th:if="${products.totalPages > 1}">
+            <a th:if="${products.number > 0}" th:href="@{/search(keyword=${keyword}, categoryId=${categoryId}, minPrice=${minPrice}, maxPrice=${maxPrice}, sortBy=${sortBy}, page=${products.number - 1})}">« Trước</a>
+            <span class="disabled" th:if="${products.number == 0}">« Trước</span>
+
+            <th:block th:each="i : ${#numbers.sequence(0, products.totalPages - 1)}">
+                <a th:if="${i != products.number}" th:href="@{/search(keyword=${keyword}, categoryId=${categoryId}, minPrice=${minPrice}, maxPrice=${maxPrice}, sortBy=${sortBy}, page=${i})}" th:text="${i + 1}"></a>
+                <span th:if="${i == products.number}" class="active" th:text="${i + 1}"></span>
+            </th:block>
+
+            <a th:if="${products.number < products.totalPages - 1}" th:href="@{/search(keyword=${keyword}, categoryId=${categoryId}, minPrice=${minPrice}, maxPrice=${maxPrice}, sortBy=${sortBy}, page=${products.number + 1})}">Sau »</a>
+            <span class="disabled" th:if="${products.number >= products.totalPages - 1}">Sau »</span>
+        </div>
+    </main>
+</div>
+
+<div th:replace="~{layout/footer :: footer}"></div>
+<script th:src="@{/js/main.js}"></script>
+</body>
+</html>

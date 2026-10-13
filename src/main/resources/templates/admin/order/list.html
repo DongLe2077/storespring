@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/layout/admin-layout :: admin-head('Quản lý Đơn hàng')}"></head>
+<body>
+
+<div th:replace="~{admin/layout/admin-layout :: admin-layout(~{::#order-list-content}, 'Quản lý Đơn hàng')}">
+    <div id="order-list-content">
+
+        <div class="admin-card">
+            <!-- Header -->
+            <div class="admin-card-header">
+                <h2>
+                    <span>🧾 Danh sách đơn hàng</span>
+                    <span style="font-size: 0.88rem; color: var(--text-muted); font-weight: normal;" 
+                          th:text="'(' + ${orderPage.totalElements} + ' đơn)'">
+                        (0 đơn)
+                    </span>
+                </h2>
+            </div>
+
+            <!-- Status Filter Tabs -->
+            <div style="display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; border-bottom: 1px solid var(--border-subtle); padding-bottom: 14px;">
+                <a th:href="@{/admin/orders(status='ALL')}" 
+                   class="btn btn-sm" 
+                   th:classappend="${selectedStatus == 'ALL'} ? 'btn-primary' : 'btn-secondary'">
+                    Tất cả đơn
+                </a>
+                <a th:href="@{/admin/orders(status='PENDING')}" 
+                   class="btn btn-sm" 
+                   th:classappend="${selectedStatus == 'PENDING'} ? 'btn-primary' : 'btn-secondary'">
+                    ⏳ Chờ xử lý
+                </a>
+                <a th:href="@{/admin/orders(status='CONFIRMED')}" 
+                   class="btn btn-sm" 
+                   th:classappend="${selectedStatus == 'CONFIRMED'} ? 'btn-primary' : 'btn-secondary'">
+                    ✓ Đã xác nhận
+                </a>
+                <a th:href="@{/admin/orders(status='SHIPPING')}" 
+                   class="btn btn-sm" 
+                   th:classappend="${selectedStatus == 'SHIPPING'} ? 'btn-primary' : 'btn-secondary'">
+                    🚚 Đang giao
+                </a>
+                <a th:href="@{/admin/orders(status='COMPLETED')}" 
+                   class="btn btn-sm" 
+                   th:classappend="${selectedStatus == 'COMPLETED'} ? 'btn-primary' : 'btn-secondary'">
+                    🎉 Hoàn thành
+                </a>
+                <a th:href="@{/admin/orders(status='CANCELLED')}" 
+                   class="btn btn-sm" 
+                   th:classappend="${selectedStatus == 'CANCELLED'} ? 'btn-primary' : 'btn-secondary'">
+                    ✕ Đã hủy
+                </a>
+            </div>
+
+            <!-- Order Table -->
+            <div class="admin-table-responsive">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Mã đơn</th>
+                            <th>Khách hàng</th>
+                            <th>Số điện thoại</th>
+                            <th>Ngày đặt</th>
+                            <th>Thanh toán</th>
+                            <th>Tổng tiền</th>
+                            <th>Trạng thái</th>
+                            <th style="text-align: right;">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:if="${orderPage.content.isEmpty()}">
+                            <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 30px;">
+                                Không có đơn hàng nào trong mục này.
+                            </td>
+                        </tr>
+                        <tr th:each="order : ${orderPage.content}">
+                            <td>
+                                <strong style="color: var(--neon-cyan);" th:text="${order.code}">ORD-123456</strong>
+                            </td>
+                            <td>
+                                <span style="font-weight: 600; color: var(--text-white);" th:text="${order.fullname}">Nguyễn Văn A</span>
+                                <span th:if="${order.user != null}" style="display: block; font-size: 0.75rem; color: var(--text-muted);" 
+                                      th:text="'(' + ${order.user.username} + ')'">(user)</span>
+                            </td>
+                            <td th:text="${order.phone}">0123456789</td>
+                            <td th:text="${#temporals.format(order.orderDate, 'dd/MM/yyyy HH:mm')}">01/01/2026</td>
+                            <td>
+                                <span th:if="${order.paymentMethod == 'COD' or order.paymentMethod == null}" style="font-size: 0.76rem; padding: 2px 7px; border-radius: 10px; background: rgba(16,185,129,0.12); color: var(--neon-green); font-weight: 600;">💵 COD</span>
+                                <span th:if="${order.paymentMethod == 'BANK_TRANSFER'}" style="font-size: 0.76rem; padding: 2px 7px; border-radius: 10px; background: rgba(6,182,212,0.12); color: var(--neon-cyan); font-weight: 600;">🏦 VietQR</span>
+                                <span th:if="${order.paymentMethod == 'MOMO'}" style="font-size: 0.76rem; padding: 2px 7px; border-radius: 10px; background: rgba(216,45,139,0.12); color: #f472b6; font-weight: 600;">👛 MoMo</span>
+                                <span th:if="${order.paymentMethod == 'VNPAY'}" style="font-size: 0.76rem; padding: 2px 7px; border-radius: 10px; background: rgba(0,91,170,0.12); color: #38bdf8; font-weight: 600;">📱 VNPAY</span>
+                                <span th:if="${order.paymentMethod == 'CREDIT_CARD'}" style="font-size: 0.76rem; padding: 2px 7px; border-radius: 10px; background: rgba(139,92,246,0.12); color: var(--neon-purple); font-weight: 600;">💳 Thẻ QT</span>
+                                <div style="margin-top: 4px;">
+                                    <span th:if="${order.paymentStatus != null and order.paymentStatus.name() == 'PAID'}" 
+                                          style="font-size: 0.7rem; color: #4ade80; background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.3); padding: 1px 6px; border-radius: 4px; display: inline-block;">
+                                        ✓ ĐÃ TT
+                                    </span>
+                                    <span th:if="${order.paymentStatus == null or order.paymentStatus.name() == 'UNPAID'}" 
+                                          style="font-size: 0.7rem; color: #facc15; background: rgba(234,179,8,0.15); border: 1px solid rgba(234,179,8,0.3); padding: 1px 6px; border-radius: 4px; display: inline-block;">
+                                        ⏳ CHƯA TT
+                                    </span>
+                                </div>
+                            </td>
+                            <td>
+                                <strong style="color: var(--text-white);" 
+                                        th:text="${#numbers.formatInteger(order.totalPrice, 0, 'POINT')} + ' ₫'">
+                                    1.000.000 ₫
+                                </strong>
+                            </td>
+                            <td>
+                                <span class="admin-status status-pending" th:if="${order.status.name() == 'PENDING'}">⏳ Chờ xử lý</span>
+                                <span class="admin-status status-confirmed" th:if="${order.status.name() == 'CONFIRMED'}">✓ Đã xác nhận</span>
+                                <span class="admin-status status-shipping" th:if="${order.status.name() == 'SHIPPING'}">🚚 Đang giao</span>
+                                <span class="admin-status status-completed" th:if="${order.status.name() == 'COMPLETED'}">🎉 Hoàn thành</span>
+                                <span class="admin-status status-cancelled" th:if="${order.status.name() == 'CANCELLED'}">✕ Đã hủy</span>
+                            </td>
+                            <td style="text-align: right;">
+                                <a th:href="@{/admin/orders/{id}(id=${order.id})}" class="btn btn-secondary btn-sm">
+                                    Chi tiết & Xử lý →
+                                </a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination" th:if="${orderPage.totalPages > 1}" style="margin-top: 24px; justify-content: center;">
+                <a th:if="${orderPage.hasPrevious()}" 
+                   th:href="@{/admin/orders(page=${orderPage.number - 1}, status=${selectedStatus})}" 
+                   class="page-link">← Trước</a>
+
+                <th:block th:each="pageNum : ${#numbers.sequence(0, orderPage.totalPages - 1)}">
+                    <a th:href="@{/admin/orders(page=${pageNum}, status=${selectedStatus})}"
+                       th:text="${pageNum + 1}"
+                       th:classappend="${pageNum == orderPage.number} ? 'active'"
+                       class="page-link">1</a>
+                </th:block>
+
+                <a th:if="${orderPage.hasNext()}" 
+                   th:href="@{/admin/orders(page=${orderPage.number + 1}, status=${selectedStatus})}" 
+                   class="page-link">Sau →</a>
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+</body>
+</html>
